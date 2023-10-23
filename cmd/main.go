@@ -17,7 +17,7 @@ import (
 func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
-	f, err := os.Open(filepath.FromSlash("../configs/base.yaml"))
+	f, err := os.Open(filepath.FromSlash("./configs/base.yaml"))
 	if err != nil {
 		logger.Fatal("Failed to open configuration", zap.Error(err))
 	}

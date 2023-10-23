@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"time"
 
-	"github.com/emzola/bugtracker/pkg/model"
+	"github.com/emzola/bugtracker/internal/model"
+	"github.com/emzola/bugtracker/pkg/validator"
 )
 
 type ProjectRepository interface {
@@ -15,17 +15,22 @@ type ProjectRepository interface {
 	// DeleteProject(ctx context.Context, id int64) error
 }
 
-func (s *Service) CreateProject(ctx context.Context, name, description string, startDate, endDate time.Time, publicAccess bool, owner, createdBy string) (*model.Project, error) {
+func (s *Service) CreateProject(ctx context.Context, name, description, owner, startDate, endDate string, publicAccess bool, createdBy, modifiedBy string) (*model.Project, error) {
 	project := &model.Project{
 		Name:         name,
 		Description:  description,
+		Owner:        owner,
+		Status:       "active",
 		StartDate:    startDate,
 		EndDate:      endDate,
 		PublicAccess: publicAccess,
-		Owner:        owner,
 		CreatedBy:    createdBy,
+		ModifiedBy:   modifiedBy,
 	}
-	// Handle validation first before proceeding
+	v := validator.New()
+	if project.Validate(v); !v.Valid() {
+		return nil, failedValidationErr(v.Errors)
+	}
 	err := s.repo.CreateProject(ctx, project)
 	if err != nil {
 		return nil, err
