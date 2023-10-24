@@ -1,19 +1,22 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 )
 
-// ErrNotFound is returned when a requested record is not found.
-var ErrNotFound error
+var (
+	// ErrNotFound is returned when a requested record is not found.
+	ErrNotFound = errors.New("not found")
 
-// ErrFailedValidation is returned when there is a validation error.
-var ErrFailedValidation error
+	// ErrFailedValidation is returned when there is a validation error.
+	ErrFailedValidation = errors.New("failed validation")
 
-// ErrEditConflict is returned when there is an edit conflict error.
-var ErrEditConflict error
+	// ErrEditConflict is returned when there is an edit conflict error.
+	ErrEditConflict = errors.New("edit conflict")
+)
 
 // failedValidationErr loops through an errors map and returns ErrFailedValidation
 // which contains the keys and values of the errors map.
