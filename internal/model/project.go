@@ -37,8 +37,9 @@ func (p Project) Validate(v *validator.Validator) {
 			v.Check(p.StartDate.Before(*p.EndDate), "end date", "must not be before start date")
 		}
 	}
-	// if !p.EndDate.IsZero() {
-	// 	v.Check(!p.StartDate.IsZero(), "start date", "must be provided")
-	// 	v.Check(p.StartDate.Before(*p.EndDate), "end date", "must not be before start date")
-	// }
+	if p.CompletedOn != nil {
+		if p.StartDate != nil {
+			v.Check(p.StartDate.Before(*p.CompletedOn), "completed on", "must not be before start date")
+		}
+	}
 }

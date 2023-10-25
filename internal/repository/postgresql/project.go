@@ -74,3 +74,25 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 	}
 	return &project, nil
 }
+
+// UpdateProject updates a project's record.
+func (r *Repository) UpdateProject(ctx context.Context, project *model.Project) error {
+	query := `
+		UPDATE project
+		SET name = $1, description = $2, owner = $3, status = $4, start_date = $5, end_date = $6, completed_on = $7, public_access = $8, last_modified = CURRENT_TIMESTAMP(0), version = version + 1
+		WHERE id = $9 AND version = $10
+		RETURNING last_modified, version`
+	args := []interface{}{project.Name, project.Description, project.Owner, project.Status, project.StartDate, project.EndDate, project.CompletedOn, project.PublicAccess, project.ID, project.Version}
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(&project.LastModified, &project.Version)
+	if err != nil {
+		switch {
+		case err.Error() == "pq: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		case errors.Is(err, sql.ErrNoRows):
+			return repository.ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
+}
