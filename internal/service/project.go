@@ -15,7 +15,7 @@ type ProjectRepository interface {
 	GetProject(ctx context.Context, id int64) (*model.Project, error)
 	// GetAllProjects(ctx context.Context) ([]*model.Project, model.Metadata, error)
 	UpdateProject(ctx context.Context, project *model.Project) error
-	// DeleteProject(ctx context.Context, id int64) error
+	DeleteProject(ctx context.Context, id int64) error
 }
 
 // CreateProject adds a new project.
@@ -131,4 +131,18 @@ func (s *Service) UpdateProject(ctx context.Context, id int64, name, description
 		}
 	}
 	return project, nil
+}
+
+// DeleteProject deletes a project by id.
+func (s *Service) DeleteProject(ctx context.Context, id int64) error {
+	err := s.repo.DeleteProject(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return ErrNotFound
+		default:
+			return err
+		}
+	}
+	return nil
 }

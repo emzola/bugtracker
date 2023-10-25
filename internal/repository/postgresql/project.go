@@ -96,3 +96,27 @@ func (r *Repository) UpdateProject(ctx context.Context, project *model.Project) 
 	}
 	return nil
 }
+
+// Delete removes a project record by its id.
+func (r *Repository) DeleteProject(ctx context.Context, id int64) error {
+	query := `
+		DELETE FROM project
+		WHERE id = $1`
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		switch {
+		case err.Error() == "pq: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return err
+		}
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
+}

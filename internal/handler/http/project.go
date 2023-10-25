@@ -15,6 +15,7 @@ type projectService interface {
 	CreateProject(ctx context.Context, name, description, owner, startDate, endDate string, publicAccess bool, createdBy, modifiedBy string) (*model.Project, error)
 	GetProject(ctx context.Context, id int64) (*model.Project, error)
 	UpdateProject(ctx context.Context, id int64, name, description, owner, status, startDate, endDate, completedOn *string, publicAccess *bool) (*model.Project, error)
+	DeleteProject(ctx context.Context, id int64) error
 }
 
 func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +118,32 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"project": project}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
+	id, err := h.readIDParam(r, "projectId")
+	if err != nil {
+		h.badRequestResponse(w, r, err)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	err = h.service.DeleteProject(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, context.Canceled):
+			return
+		case errors.Is(err, service.ErrNotFound):
+			h.notFoundResponse(w, r)
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"message": "project successfully deleted"}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}
