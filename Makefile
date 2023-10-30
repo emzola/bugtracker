@@ -38,4 +38,4 @@ db/migrations/new:
 .PHONY: db/migrations/up
 db/migrations/up: confirm
 	@echo 'Running up migrations...'
-	migrate -path ./migrations -database ${DATABASE_URL} up
+	@migrate -path ./migrations -database ${DATABASE_URL} up

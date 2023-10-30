@@ -11,6 +11,6 @@ CREATE TABLE IF NOT EXISTS project (
     last_modified timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     created_by text NOT NULL,
     modified_by text NOT NULL,
-    public_access boolean NOT NULL DEFAULT false,
+    access text NOT NULL,
     version integer NOT NULL DEFAULT 1
 );

@@ -20,17 +20,18 @@ type Project struct {
 	LastModified time.Time  `json:"last_modified"`
 	CreatedBy    string     `json:"created_by"`
 	ModifiedBy   string     `json:"modified_by"`
-	PublicAccess bool       `json:"public_access"`
+	Access       string     `json:"access"`
 	Version      int64      `json:"-"`
 }
 
 // Validate project data
-func (p Project) Validate(v *validator.Validator) {
+func (p Project) Validate(v *validator.Validator, f Filters) {
 	v.Check(p.Name != "", "name", "must be provided")
 	v.Check(len(p.Name) >= 5, "name", "must not be less than 5 bytes long")
 	v.Check(len(p.Name) <= 500, "name", "must not be more than 500 bytes long")
 	v.Check(len(p.Description) >= 5, "description", "must not be less than 5 bytes long")
 	v.Check(len(p.Description) <= 1000, "description", "must not be more than 1000 bytes long")
+	v.Check(p.Access != "", "access", "must be provided")
 	if p.EndDate != nil {
 		v.Check(p.StartDate != nil, "start date", "must be provided")
 		if p.StartDate != nil {
@@ -42,4 +43,6 @@ func (p Project) Validate(v *validator.Validator) {
 			v.Check(p.StartDate.Before(*p.CompletedOn), "completed on", "must not be before start date")
 		}
 	}
+	v.Check(validator.In(p.Status, f.StatusSafelist...), "status", "invalid input value")
+	v.Check(validator.In(p.Access, f.AccessSafelist...), "access", "invalid input value")
 }

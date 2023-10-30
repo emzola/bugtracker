@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/emzola/bugtracker/pkg/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -27,30 +29,30 @@ func (h *Handler) readIDParam(r *http.Request, idParam string) (int64, error) {
 
 // readString returns a string value from the query string, or the provided
 // default value if no matching key could be found.
-// func (h *Handler) readString(qs url.Values, key string, defaultValue string) string {
-// 	s := qs.Get(key)
-// 	if len(s) == 0 {
-// 		return defaultValue
-// 	}
-// 	return s
-// }
+func (h *Handler) readString(qs url.Values, key string, defaultValue string) string {
+	s := qs.Get(key)
+	if len(s) == 0 {
+		return defaultValue
+	}
+	return s
+}
 
 // readInt() reads a string value from the query string and converts it to an
 // integer before returning. If no matching key could be found it returns the provided
 // default value. If the value couldn't be converted to an integer, it records an
 // error message in the provided Validator instance.
-// func (h *Handler) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
-// 	s := qs.Get(key)
-// 	if len(s) == 0 {
-// 		return defaultValue
-// 	}
-// 	i, err := strconv.Atoi(s)
-// 	if err != nil {
-// 		v.AddError(key, "must be an integer value")
-// 		return defaultValue
-// 	}
-// 	return i
-// }
+func (h *Handler) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+	s := qs.Get(key)
+	if len(s) == 0 {
+		return defaultValue
+	}
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		v.AddError(key, "must be an integer value")
+		return defaultValue
+	}
+	return i
+}
 
 // encodeJSON serializes data to JSON and writes the appropriate HTTP status code and headers if necessary.
 func (h *Handler) encodeJSON(w http.ResponseWriter, status int, data envelop, headers http.Header) error {
