@@ -14,14 +14,16 @@ import (
 // CreateProject adds a new project record.
 func (r *Repository) CreateProject(ctx context.Context, project *model.Project) error {
 	query := `
-		INSERT INTO projects (project_name, project_desc, start_date, target_end_date, created_by, modified_by)
+		INSERT INTO projects (name, description, start_date, target_end_date, created_by, modified_by)
 		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING project_id, created_on, modified_on, version`
+		RETURNING id, created_on, modified_on, version`
 	args := []interface{}{project.Name, project.Description, project.StartDate, project.TargetEndDate, project.CreatedBy, project.ModifiedBy}
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&project.ID, &project.CreatedOn, &project.ModifiedOn, &project.Version)
 	if err != nil {
 		switch {
-		case err.Error() == `ERROR: duplicate key value violates unique constraint "projects_project_name_key" (SQLSTATE 23505)`:
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		case err.Error() == `ERROR: duplicate key value violates unique constraint "projects_name_key" (SQLSTATE 23505)`:
 			return repository.ErrDuplicateKey
 		default:
 			return err
@@ -36,9 +38,9 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 		return nil, repository.ErrNotFound
 	}
 	query := `
-		SELECT project_id, project_name, project_desc, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
+		SELECT id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
 		FROM projects
-		WHERE project_id = $1`
+		WHERE id = $1`
 	var project model.Project
 	if err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&project.ID,
@@ -73,41 +75,41 @@ func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate,
 	switch {
 	case !startDate.IsZero():
 		query = fmt.Sprintf(`
-		SELECT count(*) OVER(), project_id, project_name, project_desc, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
+		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
 		FROM projects
-		WHERE (to_tsvector('simple', project_name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (start_date = $2)
 		AND (LOWER(created_by) = LOWER($3) OR $3 = '')
-		ORDER BY %s %s, project_id ASC 
+		ORDER BY %s %s, id ASC 
 		LIMIT $4 OFFSET $5`, filters.SortColumn(), filters.SortDirection())
 		args = []interface{}{name, startDate, createdby, filters.Limit(), filters.Offset()}
 	case !targetEndDate.IsZero():
 		query = fmt.Sprintf(`
-		SELECT count(*) OVER(), project_id, project_name, project_desc, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
+		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
 		FROM projects
-		WHERE (to_tsvector('simple', project_name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (target_end_date = $2)
 		AND (LOWER(created_by) = LOWER($3) OR $3 = '')
-		ORDER BY %s %s, project_id ASC 
+		ORDER BY %s %s, id ASC 
 		LIMIT $4 OFFSET $5`, filters.SortColumn(), filters.SortDirection())
 		args = []interface{}{name, targetEndDate, createdby, filters.Limit(), filters.Offset()}
 	case !actualEndDate.IsZero():
 		query = fmt.Sprintf(`
-		SELECT count(*) OVER(), project_id, project_name, project_desc, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
+		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
 		FROM projects
-		WHERE (to_tsvector('simple', project_name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (actual_end_date = $2)
 		AND (LOWER(created_by) = LOWER($3) OR $3 = '')
-		ORDER BY %s %s, project_id ASC 
+		ORDER BY %s %s, id ASC 
 		LIMIT $4 OFFSET $5`, filters.SortColumn(), filters.SortDirection())
 		args = []interface{}{name, actualEndDate, createdby, filters.Limit(), filters.Offset()}
 	default:
 		query = fmt.Sprintf(`
-		SELECT count(*) OVER(), project_id, project_name, project_desc, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
+		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
 		FROM projects
-		WHERE (to_tsvector('simple', project_name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (LOWER(created_by) = LOWER($2) OR $2 = '')
-		ORDER BY %s %s, project_id ASC 
+		ORDER BY %s %s, id ASC 
 		LIMIT $3 OFFSET $4`, filters.SortColumn(), filters.SortDirection())
 		args = []interface{}{name, createdby, filters.Limit(), filters.Offset()}
 	}
@@ -150,8 +152,8 @@ func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate,
 func (r *Repository) UpdateProject(ctx context.Context, project *model.Project) error {
 	query := `
 		UPDATE projects
-		SET project_name = $1, project_desc = $2, start_date = $3, target_end_date = $4, actual_end_date = $5, modified_by = $6, modified_on = CURRENT_TIMESTAMP(0), version = version + 1
-		WHERE project_id = $7 AND version = $8
+		SET name = $1, description = $2, start_date = $3, target_end_date = $4, actual_end_date = $5, modified_by = $6, modified_on = CURRENT_TIMESTAMP(0), version = version + 1
+		WHERE id = $7 AND version = $8
 		RETURNING modified_on, version`
 	args := []interface{}{project.Name, project.Description, project.StartDate, project.TargetEndDate, project.ActualEndDate, project.ModifiedBy, project.ID, project.Version}
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&project.ModifiedOn, &project.Version)
@@ -175,7 +177,7 @@ func (r *Repository) DeleteProject(ctx context.Context, id int64) error {
 	}
 	query := `
 		DELETE FROM projects
-		WHERE project_id = $1`
+		WHERE id = $1`
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		switch {

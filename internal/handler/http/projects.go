@@ -38,6 +38,8 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	project, err := h.service.CreateProject(ctx, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, user, user)
 	if err != nil {
 		switch {
+		case errors.Is(err, context.Canceled):
+			return
 		case errors.Is(err, service.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
@@ -90,15 +92,15 @@ func (h *Handler) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 	v := validator.New()
 	qs := r.URL.Query()
-	requestQuery.Name = h.readString(qs, "project_name", "")
+	requestQuery.Name = h.readString(qs, "name", "")
 	requestQuery.StartDate = h.readString(qs, "start_date", "")
 	requestQuery.TargetEndDate = h.readString(qs, "target_end_date", "")
 	requestQuery.ActualEndDate = h.readString(qs, "actual_end_date", "")
 	requestQuery.CreatedBy = h.readString(qs, "created_by", "")
 	requestQuery.Filters.Page = h.readInt(qs, "page", 1, v)
 	requestQuery.Filters.PageSize = h.readInt(qs, "page_size", 20, v)
-	requestQuery.Filters.Sort = h.readString(qs, "sort", "project_id")
-	requestQuery.Filters.SortSafelist = []string{"project_id", "project_name", "start_date", "target_end_date", "actual_end_date", "created_by", "-project_id", "-project_name", "-start_date", "-target_end_date", "-actual_end_date", "-created_by"}
+	requestQuery.Filters.Sort = h.readString(qs, "sort", "id")
+	requestQuery.Filters.SortSafelist = []string{"id", "name", "start_date", "target_end_date", "actual_end_date", "created_by", "-id", "-name", "-start_date", "-target_end_date", "-actual_end_date", "-created_by"}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	projects, metadata, err := h.service.GetAllProjects(ctx, requestQuery.Name, requestQuery.StartDate, requestQuery.TargetEndDate, requestQuery.ActualEndDate, requestQuery.CreatedBy, requestQuery.Filters, v)

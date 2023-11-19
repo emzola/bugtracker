@@ -10,7 +10,7 @@ import (
 	"github.com/emzola/bugtracker/pkg/validator"
 )
 
-type ProjectRepository interface {
+type projectRepository interface {
 	CreateProject(ctx context.Context, project *model.Project) error
 	GetProject(ctx context.Context, id int64) (*model.Project, error)
 	GetAllProjects(ctx context.Context, name string, startDate, targetEndDate, actualEndDate time.Time, createdby string, filters model.Filters) ([]*model.Project, model.Metadata, error)

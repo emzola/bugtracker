@@ -1,7 +1,8 @@
 package service
 
 type RepositoryLayer interface {
-	ProjectRepository
+	projectRepository
+	userRepository
 }
 
 // Controller defines a new project service controller.

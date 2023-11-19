@@ -1,10 +1,10 @@
-CREATE TABLE IF NOT EXISTS projects (
+CREATE TABLE IF NOT EXISTS users (
     id bigserial PRIMARY KEY,
-    name text UNIQUE NOT NULL,
-    description text NOT NULL DEFAULT '',
-    start_date date NOT NULL,
-    target_end_date date NOT NULL,
-    actual_end_date date,
+    name text NOT NULL,
+    email citext UNIQUE NOT NULL,
+    password_hash bytea NOT NULL,
+    activated bool NOT NULL,
+    role text NOT NULL,
     created_on timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     created_by text NOT NULL,
     modified_on timestamp(0) with time zone NOT NULL DEFAULT NOW(),

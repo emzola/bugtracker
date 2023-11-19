@@ -2,6 +2,7 @@ package http
 
 type ServiceLayer interface {
 	projectService
+	userService
 }
 
 // Handler defines the app's HTTP handler.
