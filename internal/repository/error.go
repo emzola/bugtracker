@@ -11,4 +11,7 @@ var (
 
 	// ErrEditConflict is returned when there is an edit conflict error.
 	ErrEditConflict = errors.New("edit conflict")
+
+	// ErrDuplicateKey is returned when key already exists.
+	ErrDuplicateKey = errors.New("duplicate key")
 )
