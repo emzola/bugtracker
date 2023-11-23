@@ -28,6 +28,8 @@ func (p Project) Validate(v *validator.Validator) {
 	v.Check(len(p.Name) <= 500, "name", "must not be more than 500 bytes long")
 	v.Check(len(p.Description) >= 5, "description", "must not be less than 5 bytes long")
 	v.Check(len(p.Description) <= 1000, "description", "must not be more than 1000 bytes long")
+	v.Check(!p.StartDate.IsZero(), "start date", "must be provided")
+	v.Check(!p.TargetEndDate.IsZero(), "target end date", "must be provided")
 	v.Check(p.StartDate.Before(p.TargetEndDate), "target end date", "must not be before start date")
 	if p.ActualEndDate != nil {
 		v.Check(p.StartDate.Before(*p.ActualEndDate), "actual end date", "must not be before start date")

@@ -26,21 +26,25 @@ func (s *Service) CreateProject(ctx context.Context, name, description, startDat
 		CreatedBy:   createdBy,
 		ModifiedBy:  modifiedBy,
 	}
-	start, err := time.Parse("2006-01-02", startDate)
-	if err != nil {
-		return nil, err
+	if startDate != "" {
+		start, err := time.Parse("2006-01-02", startDate)
+		if err != nil {
+			return nil, err
+		}
+		project.StartDate = start
 	}
-	project.StartDate = start
-	targetEnd, err := time.Parse("2006-01-02", targetEndDate)
-	if err != nil {
-		return nil, err
+	if targetEndDate != "" {
+		targetEnd, err := time.Parse("2006-01-02", targetEndDate)
+		if err != nil {
+			return nil, err
+		}
+		project.TargetEndDate = targetEnd
 	}
-	project.TargetEndDate = targetEnd
 	v := validator.New()
 	if project.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err = s.repo.CreateProject(ctx, project)
+	err := s.repo.CreateProject(ctx, project)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateKey):

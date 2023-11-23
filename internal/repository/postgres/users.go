@@ -1,4 +1,4 @@
-package postgresql
+package postgres
 
 import (
 	"context"
@@ -20,7 +20,9 @@ func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedOn, &user.ModifiedOn, &user.Version)
 	if err != nil {
 		switch {
-		case err.Error() == `ERROR: duplicate key value violates unique constraint "users_email_key" (SQLSTATE 23505`:
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		case err.Error() == `ERROR: duplicate key value violates unique constraint "users_email_key" (SQLSTATE 23505)`:
 			return repository.ErrDuplicateKey
 		default:
 			return err

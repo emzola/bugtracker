@@ -41,7 +41,7 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	err = h.encodeJSON(w, http.StatusCreated, envelop{"user": user}, nil)
+	err = h.encodeJSON(w, http.StatusAccepted, envelop{"user": user}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}

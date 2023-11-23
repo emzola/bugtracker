@@ -71,7 +71,7 @@ func (h *Handler) encodeJSON(w http.ResponseWriter, status int, data envelop, he
 }
 
 // decodeJSON de-serializes JSON data into Go types.
-func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 	dec := json.NewDecoder(r.Body)
