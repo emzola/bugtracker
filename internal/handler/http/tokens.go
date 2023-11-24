@@ -10,17 +10,13 @@ import (
 	"github.com/emzola/bugtracker/internal/service"
 )
 
-type userService interface {
-	CreateUser(ctx context.Context, name, email, password, role, createdBy, modifiedBy string) (*model.User, error)
-	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
+type tokenService interface {
+	CreateActivationToken(ctx context.Context, user *model.User) error
 }
 
-func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createActivationToken(w http.ResponseWriter, r *http.Request) {
 	var requestBody struct {
-		Name     string `json:"name"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
+		Email string `json:"email"`
 	}
 	err := h.decodeJSON(w, r, &requestBody)
 	if err != nil {
@@ -29,8 +25,7 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	creator := "ems"
-	user, err := h.service.CreateUser(ctx, requestBody.Name, requestBody.Email, requestBody.Password, requestBody.Role, creator, creator)
+	user, err := h.service.GetUserByEmail(ctx, requestBody.Email)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -42,7 +37,12 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	err = h.encodeJSON(w, http.StatusAccepted, envelop{"user": user}, nil)
+	err = h.service.CreateActivationToken(ctx, user)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"message": "an email will be sent to you containing activation instructions"}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}

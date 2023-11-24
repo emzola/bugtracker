@@ -65,7 +65,7 @@ func (m Mailer) Send(recipient, templateFile string, data any) error {
 	msg.SetBody("text/plain", plainBody.String())
 	msg.AddAlternative("text/html", htmlBody.String())
 	// Try sending the email up to three times before aborting and returning the final
-	// error. Sleep for 500 milliseconds between each attempt.
+	// error. Sleep for 5 seconds between each attempt.
 	for i := 1; i <= 3; i++ {
 		err = m.dialer.DialAndSend(msg)
 		if err == nil {

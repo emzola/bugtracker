@@ -1,14 +1,11 @@
 {{define "subject"}}
-Welcome to Bug Tracker!
+Activate your Bug Tracker Account
 {{end}}
 
 {{define "plainBody"}}
 Hi {{.name}},
 
-Thanks for signing up for a Bug Tracker account. We're glad to have you on board!
-
-Please send a request to the `PUT /v1/users/activated` endpoint with the following JSON
-body to activate your account:
+Please send a `PUT /v1/users/activated` request with the following JSON body to activate your account:
 
 {"token": "{{.activationToken}}"}
 
@@ -30,9 +27,7 @@ The Bug Tracker Team
 
 <body>
 <p>Hi {{.name}},</p>
-<p>Thanks for signing up for a Bug Tracker account. We're glad to have you on board!</p>
-<p>Please send a request to the <code>PUT /v1/users/activated</code> endpoint with the
-following JSON body to activate your account:</p>
+<p>Please send a <code>PUT /v1/users/activated</code> request with the following JSON body to activate your account:</p>
 <pre><code>
 {"token": "{{.activationToken}}"}
 </code></pre>

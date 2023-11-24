@@ -8,13 +8,13 @@ import (
 type RepositoryLayer interface {
 	projectRepository
 	userRepository
+	tokenRepository
 }
 
 // Controller defines a new project service controller.
 type Service struct {
 	repo   RepositoryLayer
 	Config config.AppConfiguration
-
 	Logger *zap.Logger
 }
 

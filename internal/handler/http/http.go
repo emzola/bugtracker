@@ -3,6 +3,7 @@ package http
 type ServiceLayer interface {
 	projectService
 	userService
+	tokenService
 }
 
 // Handler defines the app's HTTP handler.
