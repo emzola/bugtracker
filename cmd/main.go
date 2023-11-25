@@ -32,6 +32,8 @@ func main() {
 	flag.StringVar(&cfg.Smtp.Username, "smtp-username", os.Getenv("SMTP_USERNAME"), "SMTP username")
 	flag.StringVar(&cfg.Smtp.Password, "smtp-password", os.Getenv("SMTP_PASSWORD"), "SMTP password")
 	flag.StringVar(&cfg.Smtp.Sender, "smtp-sender", "Bug Tracker <no-reply@bugtracker.com>", "SMTP sender")
+	// Read JWT signing secret from command-line flags into the config struct.
+	flag.StringVar(&cfg.Jwt.Secret, "jwt-secret", "", "JWT secret")
 	flag.Parse()
 	logger.Info("Starting the application", zap.Int("port", cfg.Port))
 	db, err := dbConn(cfg)
@@ -40,7 +42,7 @@ func main() {
 	}
 	repo := postgres.New(db)
 	service := service.New(repo, cfg, logger)
-	handler := httpHandler.New(service)
+	handler := httpHandler.New(service, cfg)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), handler.Routes()); err != nil {
 		panic(err)
 	}

@@ -13,6 +13,7 @@ import (
 type userService interface {
 	CreateUser(ctx context.Context, name, email, password, role, createdBy, modifiedBy string) (*model.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
+	GetUserByID(ctx context.Context, id int64) (*model.User, error)
 	GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error)
 	ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error
 }

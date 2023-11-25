@@ -21,7 +21,7 @@ confirm:
 ## run/api: run the application
 .PHONY: run/cmd
 run/cmd:
-	go run ./cmd
+	@go run ./cmd -jwt-secret=${JWT_SECRET}
 
 ## db/psql: connect to the database using psql
 .PHONY: db/psql

@@ -18,4 +18,7 @@ type AppConfiguration struct {
 		Password string
 		Sender   string
 	}
+	Jwt struct {
+		Secret string
+	}
 }

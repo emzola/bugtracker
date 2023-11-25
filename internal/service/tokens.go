@@ -2,9 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
+	"strconv"
 	"time"
 
 	"github.com/emzola/bugtracker/internal/model"
+	"github.com/emzola/bugtracker/internal/repository"
+	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/pascaldekloe/jwt"
 )
 
 type tokenRepository interface {
@@ -25,4 +30,42 @@ func (s *Service) CreateActivationToken(ctx context.Context, user *model.User) e
 	}
 	s.SendEmail(data, user.Email, "token_activation.tmpl")
 	return nil
+}
+
+// CreateAuthenticationToken creates a new authentication token.
+func (s *Service) CreateAuthenticationToken(ctx context.Context, email, password string) ([]byte, error) {
+	v := validator.New()
+	model.ValidateEmail(v, email)
+	model.ValidatePasswordPlaintext(v, password)
+	if !v.Valid() {
+		return nil, failedValidationErr(v.Errors)
+	}
+	user, err := s.repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return nil, ErrInvalidCredentials
+		default:
+			return nil, err
+		}
+	}
+	match, err := user.Password.Matches(password)
+	if err != nil {
+		return nil, err
+	}
+	if !match {
+		return nil, ErrInvalidCredentials
+	}
+	var claims jwt.Claims
+	claims.Subject = strconv.FormatInt(user.ID, 10)
+	claims.Issued = jwt.NewNumericTime(time.Now())
+	claims.NotBefore = jwt.NewNumericTime(time.Now())
+	claims.Expires = jwt.NewNumericTime(time.Now().Add(24 * time.Hour))
+	claims.Issuer = "github.com/emzola/bug-tracker"
+	claims.Audiences = []string{"github.com/emzola/bug-tracker"}
+	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(s.Config.Jwt.Secret))
+	if err != nil {
+		return nil, err
+	}
+	return jwtBytes, nil
 }

@@ -8,6 +8,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// AnonymousUser represents an inactivated user with no ID, name, email, password.
+var AnonymousUser = &User{}
+
 // User defines user data.
 type User struct {
 	ID         int64     `json:"id"`
@@ -21,6 +24,11 @@ type User struct {
 	ModifiedOn time.Time `json:"modified_on"`
 	ModifiedBy string    `json:"modified_by"`
 	Version    int       `json:"-"`
+}
+
+// IsAnonymous checks if a user instance is the anonymous user.
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }
 
 // password contains the plaintext and hashed versions of the password for a user.

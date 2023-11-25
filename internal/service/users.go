@@ -14,6 +14,7 @@ import (
 type userRepository interface {
 	CreateUser(ctx context.Context, user *model.User) error
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
+	GetUserByID(ctx context.Context, id int64) (*model.User, error)
 	CreateToken(ctx context.Context, userID int64, ttl time.Duration, scope string) (*model.Token, error)
 	GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error)
 	UpdateUser(ctx context.Context, user *model.User, modifiedby string) error
@@ -73,6 +74,20 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (*model.User
 		case errors.Is(err, repository.ErrNotFound):
 			v.AddError("email", "no matching email address found")
 			return nil, failedValidationErr(v.Errors)
+		default:
+			return nil, err
+		}
+	}
+	return user, nil
+}
+
+// GetUserByID retrieves a user by ID.
+func (s *Service) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
+	user, err := s.repo.GetUserByID(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return nil, ErrNotFound
 		default:
 			return nil, err
 		}

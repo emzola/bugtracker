@@ -16,6 +16,9 @@ var (
 
 	// ErrEditConflict is returned when there is an edit conflict error.
 	ErrEditConflict = errors.New("edit conflict")
+
+	// ErrInvalidCredentials is returned when there is no match between password and hash.
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 // failedValidationErr loops through an errors map and returns ErrFailedValidation

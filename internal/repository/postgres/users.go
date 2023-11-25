@@ -65,6 +65,38 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*model.U
 	return &user, nil
 }
 
+// GetUserByID retrieves a user record by id.
+func (r *Repository) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
+	query := `
+		SELECT id, name, email, password_hash, activated, role, created_on, created_by, modified_on, modified_by, version
+		FROM users
+		WHERE id = $1`
+	var user model.User
+	if err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password.Hash,
+		&user.Activated,
+		&user.Role,
+		&user.CreatedOn,
+		&user.CreatedBy,
+		&user.ModifiedOn,
+		&user.ModifiedBy,
+		&user.Version,
+	); err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return nil, fmt.Errorf("%v: %w", err, ctx.Err())
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, repository.ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+	return &user, nil
+}
+
 // UpdateUser updates a user's record.
 func (r *Repository) UpdateUser(ctx context.Context, user *model.User, modifiedBy string) error {
 	query := `
