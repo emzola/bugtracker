@@ -170,7 +170,7 @@ func (r *Repository) UpdateProject(ctx context.Context, project *model.Project) 
 	return nil
 }
 
-// Delete removes a project record by its id.
+// DeleteProject removes a project record by its id.
 func (r *Repository) DeleteProject(ctx context.Context, id int64) error {
 	if id < 1 {
 		return repository.ErrNotFound

@@ -17,6 +17,7 @@ type userService interface {
 	GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error)
 	ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error
 	UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedby string) (*model.User, error)
+	DeleteUser(ctx context.Context, id int64) error
 }
 
 func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
@@ -153,6 +154,30 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"user": user}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.readIDParam(r, "user_id")
+	if err != nil {
+		h.notFoundResponse(w, r)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	err = h.service.DeleteUser(ctx, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			h.notFoundResponse(w, r)
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"message": "user successfully deleted"}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}

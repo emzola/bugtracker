@@ -17,7 +17,8 @@ type userRepository interface {
 	GetUserByID(ctx context.Context, id int64) (*model.User, error)
 	CreateToken(ctx context.Context, userID int64, ttl time.Duration, scope string) (*model.Token, error)
 	GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error)
-	UpdateUser(ctx context.Context, user *model.User, modifiedby string) error
+	UpdateUser(ctx context.Context, user *model.User) error
+	DeleteUser(ctx context.Context, id int64) error
 }
 
 // CreateUser adds a new user.
@@ -118,7 +119,8 @@ func (s *Service) GetUserForToken(ctx context.Context, tokenScope, tokenPlaintex
 func (s *Service) ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error {
 	// Update user.
 	user.Activated = true
-	err := s.repo.UpdateUser(ctx, user, modifiedBy)
+	user.ModifiedBy = modifiedBy
+	err := s.repo.UpdateUser(ctx, user)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrEditConflict):
@@ -155,11 +157,12 @@ func (s *Service) UpdateUser(ctx context.Context, id int64, name, email, role *s
 	if role != nil {
 		user.Role = *role
 	}
+	user.ModifiedBy = modifiedBy
 	v := validator.New()
 	if user.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err = s.repo.UpdateUser(ctx, user, modifiedBy)
+	err = s.repo.UpdateUser(ctx, user)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateKey):
@@ -172,4 +175,18 @@ func (s *Service) UpdateUser(ctx context.Context, id int64, name, email, role *s
 		}
 	}
 	return user, nil
+}
+
+// DeleteUser deletes a user.
+func (s *Service) DeleteUser(ctx context.Context, id int64) error {
+	err := s.repo.DeleteUser(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return ErrNotFound
+		default:
+			return err
+		}
+	}
+	return nil
 }

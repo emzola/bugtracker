@@ -98,13 +98,13 @@ func (r *Repository) GetUserByID(ctx context.Context, id int64) (*model.User, er
 }
 
 // UpdateUser updates a user's record.
-func (r *Repository) UpdateUser(ctx context.Context, user *model.User, modifiedBy string) error {
+func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
 	query := `
 		UPDATE users
-		SET name = $1, email = $2, password_hash = $3, activated = $4, role = $5, modified_by = $6, version = version + 1
-		WHERE id = $7 AND version = $8
+		SET name = $1, email = $2, password_hash = $3, activated = $4, role = $5, version = version + 1
+		WHERE id = $6 AND version = $7
 		RETURNING version`
-	args := []interface{}{user.Name, user.Email, user.Password.Hash, user.Activated, user.Role, modifiedBy, user.ID, user.Version}
+	args := []interface{}{user.Name, user.Email, user.Password.Hash, user.Activated, user.Role, user.ID, user.Version}
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&user.Version)
 	if err != nil {
 		switch {
@@ -158,4 +158,31 @@ func (r *Repository) GetUserForToken(ctx context.Context, tokenScope, tokenPlain
 		}
 	}
 	return &user, nil
+}
+
+// DeleteUser removes a user record by its id.
+func (r *Repository) DeleteUser(ctx context.Context, id int64) error {
+	if id < 1 {
+		return repository.ErrNotFound
+	}
+	query := `
+		DELETE FROM users
+		WHERE id = $1`
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return err
+		}
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
 }
