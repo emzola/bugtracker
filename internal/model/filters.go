@@ -3,7 +3,7 @@ package model
 import (
 	"strings"
 
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 // Filters defines sorting and pagination data.

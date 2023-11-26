@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/emzola/bugtracker/internal/model"
-	"github.com/emzola/bugtracker/internal/repository"
+	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/internal/repository"
 )
 
 // CreateUser adds a new user record.

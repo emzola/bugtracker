@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/emzola/bugtracker/config"
-	httpHandler "github.com/emzola/bugtracker/internal/handler/http"
-	"github.com/emzola/bugtracker/internal/repository/postgres"
-	"github.com/emzola/bugtracker/internal/service"
+	"github.com/emzola/issuetracker/config"
+	httpHandler "github.com/emzola/issuetracker/internal/handler/http"
+	"github.com/emzola/issuetracker/internal/repository/postgres"
+	"github.com/emzola/issuetracker/internal/service"
 
 	"go.uber.org/zap"
 )

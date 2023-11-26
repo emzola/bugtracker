@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/emzola/bugtracker/config"
+	"github.com/emzola/issuetracker/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 

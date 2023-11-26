@@ -1,6 +1,6 @@
 package http
 
-import "github.com/emzola/bugtracker/config"
+import "github.com/emzola/issuetracker/config"
 
 type ServiceLayer interface {
 	projectService

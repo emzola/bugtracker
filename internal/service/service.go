@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/emzola/bugtracker/config"
+	"github.com/emzola/issuetracker/config"
 	"go.uber.org/zap"
 )
 

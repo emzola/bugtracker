@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 // Project defines the project data.

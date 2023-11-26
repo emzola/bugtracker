@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/pkg/validator"
 	"github.com/julienschmidt/httprouter"
 )
 

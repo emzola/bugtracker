@@ -7,7 +7,7 @@ import (
 	"encoding/base32"
 	"time"
 
-	"github.com/emzola/bugtracker/internal/model"
+	"github.com/emzola/issuetracker/internal/model"
 )
 
 // CreateToken is a shortcut method which creates a new token struct

@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 
-	"github.com/emzola/bugtracker/pkg/mailer"
+	"github.com/emzola/issuetracker/pkg/mailer"
 	"go.uber.org/zap"
 )
 

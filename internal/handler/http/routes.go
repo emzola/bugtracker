@@ -20,6 +20,9 @@ func (h *Handler) Routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", h.createUser)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", h.activateUser)
+	router.HandlerFunc(http.MethodGet, "/v1/user/:user_id", h.getUser)
+	router.HandlerFunc(http.MethodPatch, "/v1/user/:user_id", h.updateUser)
+	// router.HandlerFunc(http.MethodDelete, "/v1/user/:user_id", h.deleteUser)
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", h.createActivationToken)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", h.createAuthenticationToken)

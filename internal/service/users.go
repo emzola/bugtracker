@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/emzola/bugtracker/internal/model"
-	"github.com/emzola/bugtracker/internal/repository"
+	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/internal/repository"
 
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 type userRepository interface {
@@ -133,4 +133,43 @@ func (s *Service) ActivateUser(ctx context.Context, user *model.User, modifiedBy
 		return err
 	}
 	return nil
+}
+
+// UpdateUser updates a user.
+func (s *Service) UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedBy string) (*model.User, error) {
+	user, err := s.repo.GetUserByID(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+	if name != nil {
+		user.Name = *name
+	}
+	if email != nil {
+		user.Email = *email
+	}
+	if role != nil {
+		user.Role = *role
+	}
+	v := validator.New()
+	if user.Validate(v); !v.Valid() {
+		return nil, failedValidationErr(v.Errors)
+	}
+	err = s.repo.UpdateUser(ctx, user, modifiedBy)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrDuplicateKey):
+			v.AddError("email", "a user with this email already exists")
+			return nil, failedValidationErr(v.Errors)
+		case errors.Is(err, repository.ErrEditConflict):
+			return nil, ErrEditConflict
+		default:
+			return nil, err
+		}
+	}
+	return user, nil
 }

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/emzola/bugtracker/internal/model"
-	"github.com/emzola/bugtracker/internal/repository"
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/internal/repository"
+	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 type projectRepository interface {

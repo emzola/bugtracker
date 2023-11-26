@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/emzola/bugtracker/internal/model"
-	"github.com/emzola/bugtracker/internal/service"
+	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/internal/service"
 	"github.com/pascaldekloe/jwt"
 )
 
@@ -41,12 +41,12 @@ func (h *Handler) authenticate(next http.Handler) http.Handler {
 			return
 		}
 		// Check that the issuer is our application.
-		if claims.Issuer != "github.com/emzola/bug-tracker" {
+		if claims.Issuer != "github.com/emzola/issuetracker" {
 			h.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
 		// Check that our application is in the expected audiences for the JWT.
-		if !claims.AcceptAudience("github.com/emzola/bug-tracker") {
+		if !claims.AcceptAudience("github.com/emzola/issuetracker") {
 			h.invalidAuthenticationTokenResponse(w, r)
 			return
 		}

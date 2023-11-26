@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/pkg/validator"
 	"golang.org/x/crypto/bcrypt"
 )
 

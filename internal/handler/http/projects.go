@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emzola/bugtracker/internal/model"
-	"github.com/emzola/bugtracker/internal/service"
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 type projectService interface {
@@ -34,8 +34,8 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	user := "ems"
-	project, err := h.service.CreateProject(ctx, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, user, user)
+	userFromContext := h.contextGetUser(r)
+	project, err := h.service.CreateProject(ctx, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, userFromContext.Name, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -56,14 +56,14 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
-	id, err := h.readIDParam(r, "project_id")
+	projectID, err := h.readIDParam(r, "project_id")
 	if err != nil {
-		h.badRequestResponse(w, r, err)
+		h.notFoundResponse(w, r)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	project, err := h.service.GetProject(ctx, id)
+	project, err := h.service.GetProject(ctx, projectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -120,9 +120,9 @@ func (h *Handler) getAllProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
-	id, err := h.readIDParam(r, "project_id")
+	projectID, err := h.readIDParam(r, "project_id")
 	if err != nil {
-		h.badRequestResponse(w, r, err)
+		h.notFoundResponse(w, r)
 		return
 	}
 	var requestBody struct {
@@ -139,8 +139,8 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	user := "Ems"
-	project, err := h.service.UpdateProject(ctx, id, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, requestBody.ActualEndDate, user)
+	userFromContext := h.contextGetUser(r)
+	project, err := h.service.UpdateProject(ctx, projectID, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, requestBody.ActualEndDate, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -163,14 +163,14 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
-	id, err := h.readIDParam(r, "project_id")
+	projectID, err := h.readIDParam(r, "project_id")
 	if err != nil {
 		h.badRequestResponse(w, r, err)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	err = h.service.DeleteProject(ctx, id)
+	err = h.service.DeleteProject(ctx, projectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):

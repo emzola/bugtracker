@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emzola/bugtracker/internal/model"
-	"github.com/emzola/bugtracker/internal/service"
+	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/internal/service"
 )
 
 type tokenService interface {

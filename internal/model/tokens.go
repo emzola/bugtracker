@@ -3,12 +3,11 @@ package model
 import (
 	"time"
 
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 const (
-	ScopeActivation     = "activation"
-	ScopeAuthentication = "authentication"
+	ScopeActivation = "activation"
 )
 
 // Token holds data for an individual token.

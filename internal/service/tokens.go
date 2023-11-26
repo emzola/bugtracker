@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emzola/bugtracker/internal/model"
-	"github.com/emzola/bugtracker/internal/repository"
-	"github.com/emzola/bugtracker/pkg/validator"
+	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/internal/repository"
+	"github.com/emzola/issuetracker/pkg/validator"
 	"github.com/pascaldekloe/jwt"
 )
 
@@ -61,8 +61,8 @@ func (s *Service) CreateAuthenticationToken(ctx context.Context, email, password
 	claims.Issued = jwt.NewNumericTime(time.Now())
 	claims.NotBefore = jwt.NewNumericTime(time.Now())
 	claims.Expires = jwt.NewNumericTime(time.Now().Add(24 * time.Hour))
-	claims.Issuer = "github.com/emzola/bug-tracker"
-	claims.Audiences = []string{"github.com/emzola/bug-tracker"}
+	claims.Issuer = "github.com/emzola/issuetracker"
+	claims.Audiences = []string{"github.com/emzola/issuetracker"}
 	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(s.Config.Jwt.Secret))
 	if err != nil {
 		return nil, err
