@@ -24,6 +24,8 @@ func (h *Handler) Routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/users/:user_id", h.requireActivatedUser(h.updateUser))
 	router.HandlerFunc(http.MethodDelete, "/v1/users/:user_id", h.requireActivatedUser(h.deleteUser))
 
+	router.HandlerFunc(http.MethodPost, "/v1/issues", h.requireActivatedUser(h.createIssue))
+
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", h.createActivationToken)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", h.createAuthenticationToken)
 
