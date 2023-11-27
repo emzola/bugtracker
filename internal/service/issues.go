@@ -13,6 +13,7 @@ import (
 type issueRepository interface {
 	CreateIssue(ctx context.Context, issue *model.Issue) error
 	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
+	DeleteIssue(ctx context.Context, id int64) error
 }
 
 // CreateIssue adds a new issue.
@@ -71,4 +72,18 @@ func (s *Service) GetIssue(ctx context.Context, id int64) (*model.Issue, error) 
 		}
 	}
 	return issue, nil
+}
+
+// DeleteIssue deletes an issue by id.
+func (s *Service) DeleteIssue(ctx context.Context, id int64) error {
+	err := s.repo.DeleteIssue(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return ErrNotFound
+		default:
+			return err
+		}
+	}
+	return nil
 }

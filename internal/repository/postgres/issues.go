@@ -71,3 +71,30 @@ func (r *Repository) GetIssue(ctx context.Context, id int64) (*model.Issue, erro
 	}
 	return &issue, nil
 }
+
+// DeleteIssue removes an issue record by its id.
+func (r *Repository) DeleteIssue(ctx context.Context, id int64) error {
+	if id < 1 {
+		return repository.ErrNotFound
+	}
+	query := `
+		DELETE FROM issues
+		WHERE issue_id = $1`
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return err
+		}
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
+}
