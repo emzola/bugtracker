@@ -2,14 +2,17 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/internal/repository"
 	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 type issueRepository interface {
 	CreateIssue(ctx context.Context, issue *model.Issue) error
+	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
 }
 
 // CreateIssue adds a new issue.
@@ -53,5 +56,19 @@ func (s *Service) CreateIssue(ctx context.Context, title, description, reportedD
 
 	// WORK ON FEATURE TO SEND EMAIL TO ASSIGNEE!!!!!!
 
+	return issue, nil
+}
+
+// GetIssue retrieves an issue by id.
+func (s *Service) GetIssue(ctx context.Context, id int64) (*model.Issue, error) {
+	issue, err := s.repo.GetIssue(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
 	return issue, nil
 }
