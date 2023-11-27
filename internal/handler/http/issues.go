@@ -13,6 +13,7 @@ import (
 type issueService interface {
 	CreateIssue(ctx context.Context, title, description, reportedDate string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error)
 	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
+	UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error)
 	DeleteIssue(ctx context.Context, id int64) error
 }
 
@@ -67,6 +68,52 @@ func (h *Handler) getIssue(w http.ResponseWriter, r *http.Request) {
 			return
 		case errors.Is(err, service.ErrNotFound):
 			h.notFoundResponse(w, r)
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"issue": issue}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) updateIssue(w http.ResponseWriter, r *http.Request) {
+	issueID, err := h.readIDParam(r, "issue_id")
+	if err != nil {
+		h.notFoundResponse(w, r)
+		return
+	}
+	var requestBody struct {
+		Title                *string `json:"title"`
+		Description          *string `json:"description"`
+		AssignedTo           *int64  `json:"assigned_to"`
+		Priority             *string `json:"priority"`
+		TargetResolutionDate *string `json:"target_resolution_date"`
+		Progress             *string `json:"progress"`
+		ActualResolutionDate *string `json:"actual_resolution_date"`
+		ResolutionSummary    *string `json:"resolution_summary"`
+	}
+	err = h.decodeJSON(w, r, &requestBody)
+	if err != nil {
+		h.badRequestResponse(w, r, err)
+		return
+	}
+	userFromContext := h.contextGetUser(r)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	issue, err := h.service.UpdateIssue(ctx, issueID, requestBody.Title, requestBody.Description, requestBody.AssignedTo, requestBody.Priority, requestBody.TargetResolutionDate, requestBody.Progress, requestBody.ActualResolutionDate, requestBody.ResolutionSummary, userFromContext.Name)
+	if err != nil {
+		switch {
+		case errors.Is(err, context.Canceled):
+			return
+		case errors.Is(err, service.ErrNotFound):
+			h.notFoundResponse(w, r)
+		case errors.Is(err, service.ErrFailedValidation):
+			h.failedValidationResponse(w, r, err)
+		case errors.Is(err, service.ErrEditConflict):
+			h.editConflictResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
 		}

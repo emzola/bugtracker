@@ -13,6 +13,7 @@ import (
 type issueRepository interface {
 	CreateIssue(ctx context.Context, issue *model.Issue) error
 	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
+	UpdateIssue(ctx context.Context, issue *model.Issue) error
 	DeleteIssue(ctx context.Context, id int64) error
 }
 
@@ -67,6 +68,67 @@ func (s *Service) GetIssue(ctx context.Context, id int64) (*model.Issue, error) 
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
 			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+	return issue, nil
+}
+
+// UpdateIssue updates an issue's details.
+func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error) {
+	issue, err := s.repo.GetIssue(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+	if title != nil {
+		issue.Title = *title
+	}
+	if description != nil {
+		issue.Description = *description
+	}
+	if assignedTo != nil {
+		issue.AssignedTo = assignedTo
+	}
+	if priority != nil {
+		issue.Priority = *priority
+	}
+	if targetResolutionDate != nil {
+		targetResolution, err := time.Parse("2006-01-02", *targetResolutionDate)
+		if err != nil {
+			return nil, err
+		}
+		issue.TargetResolutionDate = targetResolution
+	}
+	if progress != nil {
+		issue.Progress = *progress
+	}
+	if actualResolutionDate != nil {
+		actualResolution, err := time.Parse("2006-01-02", *actualResolutionDate)
+		if err != nil {
+			return nil, err
+		}
+		issue.ActualResolutionDate = &actualResolution
+		issue.Status = "closed"
+	}
+	if resolutionSummary != nil {
+		issue.ResolutionSummary = *resolutionSummary
+	}
+	issue.ModifiedBy = modifiedBy
+	v := validator.New()
+	if issue.Validate(v); !v.Valid() {
+		return nil, failedValidationErr(v.Errors)
+	}
+	err = s.repo.UpdateIssue(ctx, issue)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrEditConflict):
+			return nil, ErrEditConflict
 		default:
 			return nil, err
 		}

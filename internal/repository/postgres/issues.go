@@ -72,6 +72,28 @@ func (r *Repository) GetIssue(ctx context.Context, id int64) (*model.Issue, erro
 	return &issue, nil
 }
 
+// UpdateIssueupdates an issue record.
+func (r *Repository) UpdateIssue(ctx context.Context, issue *model.Issue) error {
+	query := `
+		UPDATE issues
+		SET title = $1, description = $2, assigned_to = $3, status = $4, priority = $5, target_resolution_date = $6, progress = $7, actual_resolution_date = $8, resolution_summary = $9, modified_on = CURRENT_TIMESTAMP(0), modified_by = $10, version = version + 1
+		WHERE issue_id = $11 AND version = $12
+		RETURNING modified_on, version`
+	args := []interface{}{issue.Title, issue.Description, issue.AssignedTo, issue.Status, issue.Priority, issue.TargetResolutionDate, issue.Progress, issue.ActualResolutionDate, issue.ResolutionSummary, issue.ModifiedBy, issue.ID, issue.Version}
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(&issue.ModifiedOn, &issue.Version)
+	if err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		case errors.Is(err, sql.ErrNoRows):
+			return repository.ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
+}
+
 // DeleteIssue removes an issue record by its id.
 func (r *Repository) DeleteIssue(ctx context.Context, id int64) error {
 	if id < 1 {

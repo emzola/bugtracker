@@ -35,7 +35,9 @@ func (i Issue) Validate(v *validator.Validator) {
 	v.Check(len(i.Title) <= 500, "iitle", "must not be more than 500 bytes")
 	v.Check(len(i.Description) >= 5, "description", "must not be less than 5 bytes long")
 	v.Check(len(i.Description) <= 5000, "description", "must not be more than 5000 bytes long")
-	v.Check(!i.ReportedDate.IsZero(), "reported date", "must be provided")
+	if !i.ReportedDate.IsZero() {
+		v.Check(!i.ReportedDate.IsZero(), "reported date", "must be provided")
+	}
 	v.Check(!i.TargetResolutionDate.IsZero(), "target resolution date", "must be provided")
 	v.Check(i.TargetResolutionDate.After(i.ReportedDate), "target resolution date", "must not be before reported date")
 	if i.Progress != "" {
