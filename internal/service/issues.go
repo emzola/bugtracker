@@ -13,6 +13,7 @@ import (
 type issueRepository interface {
 	CreateIssue(ctx context.Context, issue *model.Issue) error
 	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
+	GetAllIssues(ctx context.Context, title string, reportedDate time.Time, projectID, assignedTo int64, status, priority string, filters model.Filters) ([]*model.Issue, model.Metadata, error)
 	UpdateIssue(ctx context.Context, issue *model.Issue) error
 	DeleteIssue(ctx context.Context, id int64) error
 }
@@ -73,6 +74,26 @@ func (s *Service) GetIssue(ctx context.Context, id int64) (*model.Issue, error) 
 		}
 	}
 	return issue, nil
+}
+
+// GetAllIssues returns a paginated list of all issues. List can be filtered and sorted.
+func (s *Service) GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error) {
+	if filters.Validate(v); !v.Valid() {
+		return nil, model.Metadata{}, failedValidationErr(v.Errors)
+	}
+	var reported time.Time
+	var err error
+	if reportedDate != "" {
+		reported, err = time.Parse("2006-01-02", reportedDate)
+		if err != nil {
+			return nil, model.Metadata{}, err
+		}
+	}
+	issues, metadata, err := s.repo.GetAllIssues(ctx, title, reported, projectID, assignedTo, status, priority, filters)
+	if err != nil {
+		return nil, model.Metadata{}, err
+	}
+	return issues, metadata, nil
 }
 
 // UpdateIssue updates an issue's details.

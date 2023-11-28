@@ -8,11 +8,13 @@ import (
 
 	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 type issueService interface {
 	CreateIssue(ctx context.Context, title, description, reportedDate string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error)
 	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
+	GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error)
 	UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error)
 	DeleteIssue(ctx context.Context, id int64) error
 }
@@ -74,6 +76,46 @@ func (h *Handler) getIssue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"issue": issue}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) getAllIssues(w http.ResponseWriter, r *http.Request) {
+	var requestQuery struct {
+		Title        string
+		ReportedDate string
+		projectID    int64
+		AssignedTo   int64
+		Status       string
+		Priority     string
+		Filters      model.Filters
+	}
+	v := validator.New()
+	qs := r.URL.Query()
+	requestQuery.Title = h.readString(qs, "title", "")
+	requestQuery.ReportedDate = h.readString(qs, "reported_date", "")
+	requestQuery.projectID = int64(h.readInt(qs, "project_id", 0, v))
+	requestQuery.AssignedTo = int64(h.readInt(qs, "assigned_to", 0, v))
+	requestQuery.Status = h.readString(qs, "status", "")
+	requestQuery.Priority = h.readString(qs, "priority", "")
+	requestQuery.Filters.Page = h.readInt(qs, "page", 1, v)
+	requestQuery.Filters.PageSize = h.readInt(qs, "page_size", 20, v)
+	requestQuery.Filters.Sort = h.readString(qs, "sort", "id")
+	requestQuery.Filters.SortSafelist = []string{"id", "title", "reported_date", "project_id", "assigned_to", "status", "priority", "-id", "-title", "-reported_date", "-project_id", "-assigned_to", "-status", "-priority"}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	issues, metadata, err := h.service.GetAllIssues(ctx, requestQuery.Title, requestQuery.ReportedDate, requestQuery.projectID, requestQuery.AssignedTo, requestQuery.Status, requestQuery.Priority, requestQuery.Filters, v)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrFailedValidation):
+			h.failedValidationResponse(w, r, err)
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"issues": issues, "metadata": metadata}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}

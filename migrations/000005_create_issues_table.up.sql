@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS issues (
-    issue_id bigserial PRIMARY KEY,
+    id bigserial PRIMARY KEY,
     title text NOT NULL,
     description text NOT NULL DEFAULT '',
     reporter_id bigint NOT NULL REFERENCES users,
