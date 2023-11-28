@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/emzola/issuetracker/internal/model"
@@ -56,9 +57,25 @@ func (s *Service) CreateIssue(ctx context.Context, title, description, reportedD
 	if err != nil {
 		return nil, err
 	}
-
-	// WORK ON FEATURE TO SEND EMAIL TO ASSIGNEE!!!!!!
-
+	// Send email notification to assigned user if issue is assigned.
+	if assignedTo != nil {
+		user, err := s.repo.GetUserByID(ctx, *assignedTo)
+		if err != nil {
+			switch {
+			case errors.Is(err, repository.ErrNotFound):
+				return nil, ErrNotFound
+			default:
+				return nil, err
+			}
+		}
+		data := map[string]string{
+			"name":          user.Name,
+			"issueID":       strconv.Itoa(int(issue.ID)),
+			"issueTitle":    issue.Title,
+			"issuePriority": issue.Priority,
+		}
+		s.SendEmail(data, user.Email, "issue_assign.tmpl")
+	}
 	return issue, nil
 }
 
@@ -153,6 +170,25 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 		default:
 			return nil, err
 		}
+	}
+	// Send email notification to assigned user if issue is assigned.
+	if assignedTo != nil {
+		user, err := s.repo.GetUserByID(ctx, *assignedTo)
+		if err != nil {
+			switch {
+			case errors.Is(err, repository.ErrNotFound):
+				return nil, ErrNotFound
+			default:
+				return nil, err
+			}
+		}
+		data := map[string]string{
+			"name":          user.Name,
+			"issueID":       strconv.Itoa(int(issue.ID)),
+			"issueTitle":    issue.Title,
+			"issuePriority": issue.Priority,
+		}
+		s.SendEmail(data, user.Email, "issue_assign.tmpl")
 	}
 	return issue, nil
 }

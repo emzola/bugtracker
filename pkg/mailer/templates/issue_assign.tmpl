@@ -1,0 +1,43 @@
+{{define "subject"}}
+You've been assigned an issue
+{{end}}
+
+{{define "plainBody"}}
+Hi {{.name}},
+
+You've been assigned an issue with the following details:
+
+ID: {{.issueID}}
+Title: {{.issueTitle}}
+Priority: {{.issuePriority}}
+
+View issue: http://localhost:8080/v1/issues/{{.issueID}}
+
+Thanks,
+
+The Issue Tracker Team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+
+<head>
+<meta name="viewport" content="width=device-width" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+<body>
+<p>Hi {{.name}},</p>
+<p>You've been assigned an issue with the following details:</p>
+<ul>
+    <li>ID: {{.issueID}}</li>
+    <li>Title: {{.issueTitle}}</li>
+    <li>Priority: {{.issuePriority}}</li>
+</ul>
+<p>View issue: <a href="http://localhost:8080/v1/issues/{{.issueID}}">http://localhost:8080/v1/issues/{{.issueID}}</a></p>
+<p>Thanks,</p>
+<p>The Issue Tracker Team</p>
+</body>
+</html>
+{{end}}

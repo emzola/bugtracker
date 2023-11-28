@@ -69,50 +69,18 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 
 // GetAllprojects returns a paginated list of all projects
 // as well as filtering and sorting.
-func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate, targetEndDate, actualEndDate time.Time, createdby string, filters model.Filters) ([]*model.Project, model.Metadata, error) {
-	var query string
-	var args []interface{}
-	switch {
-	case !startDate.IsZero():
-		query = fmt.Sprintf(`
+func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate, targetEndDate, actualEndDate time.Time, createdBy string, filters model.Filters) ([]*model.Project, model.Metadata, error) {
+	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
 		FROM projects
 		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
-		AND (start_date = $2)
-		AND (LOWER(created_by) = LOWER($3) OR $3 = '')
+		AND (start_date = $2 OR $2 = '0001-01-01')
+		AND (target_end_date = $3 OR $3 = '0001-01-01')
+		AND (actual_end_date = $4 OR $4 = '0001-01-01')
+		AND (LOWER(created_by) = LOWER($5) OR $5 = '')
 		ORDER BY %s %s, id ASC 
-		LIMIT $4 OFFSET $5`, filters.SortColumn(), filters.SortDirection())
-		args = []interface{}{name, startDate, createdby, filters.Limit(), filters.Offset()}
-	case !targetEndDate.IsZero():
-		query = fmt.Sprintf(`
-		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
-		FROM projects
-		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
-		AND (target_end_date = $2)
-		AND (LOWER(created_by) = LOWER($3) OR $3 = '')
-		ORDER BY %s %s, id ASC 
-		LIMIT $4 OFFSET $5`, filters.SortColumn(), filters.SortDirection())
-		args = []interface{}{name, targetEndDate, createdby, filters.Limit(), filters.Offset()}
-	case !actualEndDate.IsZero():
-		query = fmt.Sprintf(`
-		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
-		FROM projects
-		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
-		AND (actual_end_date = $2)
-		AND (LOWER(created_by) = LOWER($3) OR $3 = '')
-		ORDER BY %s %s, id ASC 
-		LIMIT $4 OFFSET $5`, filters.SortColumn(), filters.SortDirection())
-		args = []interface{}{name, actualEndDate, createdby, filters.Limit(), filters.Offset()}
-	default:
-		query = fmt.Sprintf(`
-		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
-		FROM projects
-		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
-		AND (LOWER(created_by) = LOWER($2) OR $2 = '')
-		ORDER BY %s %s, id ASC 
-		LIMIT $3 OFFSET $4`, filters.SortColumn(), filters.SortDirection())
-		args = []interface{}{name, createdby, filters.Limit(), filters.Offset()}
-	}
+		LIMIT $6 OFFSET $7`, filters.SortColumn(), filters.SortDirection())
+	args := []interface{}{name, startDate, targetEndDate, actualEndDate, createdBy, filters.Limit(), filters.Offset()}
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, model.Metadata{}, err

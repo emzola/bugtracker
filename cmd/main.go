@@ -31,7 +31,7 @@ func main() {
 	flag.IntVar(&cfg.Smtp.Port, "smtp-port", 2525, "SMTP port")
 	flag.StringVar(&cfg.Smtp.Username, "smtp-username", os.Getenv("SMTP_USERNAME"), "SMTP username")
 	flag.StringVar(&cfg.Smtp.Password, "smtp-password", os.Getenv("SMTP_PASSWORD"), "SMTP password")
-	flag.StringVar(&cfg.Smtp.Sender, "smtp-sender", "Bug Tracker <no-reply@bugtracker.com>", "SMTP sender")
+	flag.StringVar(&cfg.Smtp.Sender, "smtp-sender", "Issue Tracker <no-reply@github.com/emzola/issuetracker>", "SMTP sender")
 	// Read JWT signing secret from command-line flags into the config struct.
 	flag.StringVar(&cfg.Jwt.Secret, "jwt-secret", "", "JWT secret")
 	flag.Parse()

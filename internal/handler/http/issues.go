@@ -42,6 +42,8 @@ func (h *Handler) createIssue(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
+		case errors.Is(err, service.ErrNotFound):
+			h.notFoundResponse(w, r)
 		case errors.Is(err, service.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
