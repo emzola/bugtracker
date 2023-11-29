@@ -74,3 +74,8 @@ func (h *Handler) inactiveAccountResponse(w http.ResponseWriter, r *http.Request
 	message := "your user account must be activated to access this resource"
 	h.errorResponse(w, r, http.StatusForbidden, message)
 }
+
+func (h *Handler) invalidRoleResponse(w http.ResponseWriter, r *http.Request) {
+	message := "invalid user role"
+	h.errorResponse(w, r, http.StatusForbidden, message)
+}

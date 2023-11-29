@@ -14,7 +14,6 @@ type Project struct {
 	StartDate     time.Time  `json:"start_date"`
 	TargetEndDate time.Time  `json:"target_end_date"`
 	ActualEndDate *time.Time `json:"actual_end_date,omitempty"`
-	AssignedTo    *int64     `json:"assigned_to,omitempty"`
 	CreatedOn     time.Time  `json:"created_on"`
 	CreatedBy     string     `json:"created_by"`
 	ModifiedOn    time.Time  `json:"modified_on"`
@@ -34,8 +33,5 @@ func (p Project) Validate(v *validator.Validator) {
 	v.Check(p.StartDate.Before(p.TargetEndDate), "target end date", "must not be before start date")
 	if p.ActualEndDate != nil {
 		v.Check(p.StartDate.Before(*p.ActualEndDate), "actual end date", "must not be before start date")
-	}
-	if p.AssignedTo != nil {
-		v.Check(p.AssignedTo != nil, "assigned to", "must be provided")
 	}
 }

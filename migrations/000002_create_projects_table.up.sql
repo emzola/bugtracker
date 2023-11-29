@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS projects (
     start_date date NOT NULL,
     target_end_date date NOT NULL,
     actual_end_date date,
-    assigned_to bigint REFERENCES users,
     created_on timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     created_by text NOT NULL,
     modified_on timestamp(0) with time zone NOT NULL DEFAULT NOW(),

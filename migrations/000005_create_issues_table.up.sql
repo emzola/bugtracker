@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS issues (
     title text NOT NULL,
     description text NOT NULL DEFAULT '',
     reporter_id bigint NOT NULL REFERENCES users,
-    reported_date date NOT NULL,
+    reported_date date NOT NULL DEFAULT CURRENT_DATE,
     project_id bigint NOT NULL REFERENCES projects ON DELETE CASCADE,
     assigned_to bigint REFERENCES users,
     status text NOT NULL,

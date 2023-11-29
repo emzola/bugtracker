@@ -20,7 +20,7 @@ type issueRepository interface {
 }
 
 // CreateIssue adds a new issue.
-func (s *Service) CreateIssue(ctx context.Context, title, description, reportedDate string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error) {
+func (s *Service) CreateIssue(ctx context.Context, title, description string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error) {
 	if priority == "" {
 		priority = "low"
 	}
@@ -29,18 +29,10 @@ func (s *Service) CreateIssue(ctx context.Context, title, description, reportedD
 		Description: description,
 		ReporterID:  reporterID,
 		ProjectID:   projectID,
-		AssignedTo:  assignedTo,
 		Priority:    priority,
 		Status:      "open",
 		CreatedBy:   createdBy,
 		ModifiedBy:  modifiedBy,
-	}
-	if reportedDate != "" {
-		reported, err := time.Parse("2006-01-02", reportedDate)
-		if err != nil {
-			return nil, err
-		}
-		issue.ReportedDate = reported
 	}
 	if targetResolutionDate != "" {
 		targetResolution, err := time.Parse("2006-01-02", targetResolutionDate)
@@ -49,17 +41,13 @@ func (s *Service) CreateIssue(ctx context.Context, title, description, reportedD
 		}
 		issue.TargetResolutionDate = targetResolution
 	}
-	v := validator.New()
-	if issue.Validate(v); !v.Valid() {
-		return nil, failedValidationErr(v.Errors)
-	}
-	err := s.repo.CreateIssue(ctx, issue)
-	if err != nil {
-		return nil, err
-	}
-	// Send email notification to assigned user if issue is assigned.
+	// Issues can only be assigned to users with role 'member'.
+	// If issue is assigned, attempt to fetch the user.
+	// If the user's role is not 'member', return an error.
+	var user *model.User
+	var err error
 	if assignedTo != nil {
-		member, err := s.repo.GetUserByID(ctx, *assignedTo)
+		user, err = s.repo.GetUserByID(ctx, *assignedTo)
 		if err != nil {
 			switch {
 			case errors.Is(err, repository.ErrNotFound):
@@ -68,13 +56,28 @@ func (s *Service) CreateIssue(ctx context.Context, title, description, reportedD
 				return nil, err
 			}
 		}
+		if user.Role != "member" {
+			return nil, ErrInvalidRole
+		}
+		issue.AssignedTo = &user.ID
+	}
+	v := validator.New()
+	if issue.Validate(v); !v.Valid() {
+		return nil, failedValidationErr(v.Errors)
+	}
+	err = s.repo.CreateIssue(ctx, issue)
+	if err != nil {
+		return nil, err
+	}
+	// Send email notification to assigned user if issue is assigned.
+	if assignedTo != nil {
 		data := map[string]string{
-			"name":          member.Name,
+			"name":          user.Name,
 			"issueID":       strconv.Itoa(int(issue.ID)),
 			"issueTitle":    issue.Title,
 			"issuePriority": issue.Priority,
 		}
-		s.SendEmail(data, member.Email, "issue_assign.tmpl")
+		s.SendEmail(data, user.Email, "issue_assign.tmpl")
 	}
 	return issue, nil
 }
@@ -130,8 +133,24 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 	if description != nil {
 		issue.Description = *description
 	}
+	// Issues can only be assigned to users with role 'member'.
+	// If issue is assigned, attempt to fetch the user.
+	// If the user's role is not 'member', return an error.
+	var user *model.User
 	if assignedTo != nil {
-		issue.AssignedTo = assignedTo
+		user, err = s.repo.GetUserByID(ctx, *assignedTo)
+		if err != nil {
+			switch {
+			case errors.Is(err, repository.ErrNotFound):
+				return nil, ErrNotFound
+			default:
+				return nil, err
+			}
+		}
+		if user.Role != "member" {
+			return nil, ErrInvalidRole
+		}
+		issue.AssignedTo = &user.ID
 	}
 	if priority != nil {
 		issue.Priority = *priority
@@ -173,22 +192,13 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 	}
 	// Send email notification to assigned user if issue is assigned.
 	if assignedTo != nil {
-		member, err := s.repo.GetUserByID(ctx, *assignedTo)
-		if err != nil {
-			switch {
-			case errors.Is(err, repository.ErrNotFound):
-				return nil, ErrNotFound
-			default:
-				return nil, err
-			}
-		}
 		data := map[string]string{
-			"name":          member.Name,
+			"name":          user.Name,
 			"issueID":       strconv.Itoa(int(issue.ID)),
 			"issueTitle":    issue.Title,
 			"issuePriority": issue.Priority,
 		}
-		s.SendEmail(data, member.Email, "issue_assign.tmpl")
+		s.SendEmail(data, user.Email, "issue_assign.tmpl")
 	}
 	return issue, nil
 }

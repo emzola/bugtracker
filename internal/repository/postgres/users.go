@@ -145,6 +145,53 @@ func (r *Repository) GetAllUsers(ctx context.Context, name, email, role string, 
 	return users, metadata, nil
 }
 
+// GetAllUsersForProject returns a paginated list of all users for a specific project.
+func (r *Repository) GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters) ([]*model.User, model.Metadata, error) {
+	query := fmt.Sprintf(`
+		SELECT count(*) OVER(), users.id, users.name, users.email, users.password_hash, users.activated, users.role, users.created_on, users.created_by, users.modified_on, users.modified_by, users.version
+		FROM users
+		INNER JOIN projects_users ON projects_users.user_id = users.id
+		INNER JOIN projects ON projects_users.project_id = projects.id
+		WHERE projects.id = $1
+		AND (LOWER(users.role) = LOWER($2) OR $2 = '')
+		ORDER BY %s %s, id ASC
+		LIMIT $3 OFFSET $4`, filters.SortColumn(), filters.SortDirection())
+	args := []interface{}{projectID, role, filters.Limit(), filters.Offset()}
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, model.Metadata{}, err
+	}
+	defer rows.Close()
+	totalRecords := 0
+	users := []*model.User{}
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&totalRecords,
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Password.Hash,
+			&user.Activated,
+			&user.Role,
+			&user.CreatedOn,
+			&user.CreatedBy,
+			&user.ModifiedOn,
+			&user.ModifiedBy,
+			&user.Version,
+		)
+		if err != nil {
+			return nil, model.Metadata{}, err
+		}
+		users = append(users, &user)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, model.Metadata{}, err
+	}
+	metadata := model.CalculateMetadata(totalRecords, filters.Page, filters.PageSize)
+	return users, metadata, nil
+}
+
 // UpdateUser updates a user's record.
 func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
 	query := `

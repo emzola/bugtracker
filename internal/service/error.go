@@ -19,6 +19,9 @@ var (
 
 	// ErrInvalidCredentials is returned when there is no match between password and hash.
 	ErrInvalidCredentials = errors.New("invalid credentials")
+
+	// ErrInvalidRole is returned when user role is not allowed.
+	ErrInvalidRole = errors.New("invalid role")
 )
 
 // failedValidationErr loops through an errors map and returns ErrFailedValidation

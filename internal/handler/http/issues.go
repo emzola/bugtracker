@@ -12,7 +12,7 @@ import (
 )
 
 type issueService interface {
-	CreateIssue(ctx context.Context, title, description, reportedDate string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error)
+	CreateIssue(ctx context.Context, title, description string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error)
 	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
 	GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error)
 	UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error)
@@ -23,7 +23,6 @@ func (h *Handler) createIssue(w http.ResponseWriter, r *http.Request) {
 	var requestBody struct {
 		Title                string `json:"title"`
 		Description          string `json:"description"`
-		ReportedDate         string `json:"reported_date"`
 		ProjectID            int64  `json:"project_id"`
 		AssignedTo           *int64 `json:"assigned_to"`
 		Priority             string `json:"priority"`
@@ -37,7 +36,7 @@ func (h *Handler) createIssue(w http.ResponseWriter, r *http.Request) {
 	userFromContext := h.contextGetUser(r)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	issue, err := h.service.CreateIssue(ctx, requestBody.Title, requestBody.Description, requestBody.ReportedDate, userFromContext.ID, requestBody.ProjectID, requestBody.AssignedTo, requestBody.Priority, requestBody.TargetResolutionDate, userFromContext.Name, userFromContext.Name)
+	issue, err := h.service.CreateIssue(ctx, requestBody.Title, requestBody.Description, userFromContext.ID, requestBody.ProjectID, requestBody.AssignedTo, requestBody.Priority, requestBody.TargetResolutionDate, userFromContext.Name, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -46,6 +45,8 @@ func (h *Handler) createIssue(w http.ResponseWriter, r *http.Request) {
 			h.notFoundResponse(w, r)
 		case errors.Is(err, service.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
+		case errors.Is(err, service.ErrInvalidRole):
+			h.invalidRoleResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
 		}
@@ -154,6 +155,8 @@ func (h *Handler) updateIssue(w http.ResponseWriter, r *http.Request) {
 			return
 		case errors.Is(err, service.ErrNotFound):
 			h.notFoundResponse(w, r)
+		case errors.Is(err, service.ErrInvalidRole):
+			h.invalidRoleResponse(w, r)
 		case errors.Is(err, service.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		case errors.Is(err, service.ErrEditConflict):
