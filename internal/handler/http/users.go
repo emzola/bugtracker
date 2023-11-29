@@ -8,12 +8,14 @@ import (
 
 	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/pkg/validator"
 )
 
 type userService interface {
 	CreateUser(ctx context.Context, name, email, password, role, createdBy, modifiedBy string) (*model.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
 	GetUserByID(ctx context.Context, id int64) (*model.User, error)
+	GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error)
 	GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error)
 	ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error
 	UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedby string) (*model.User, error)
@@ -115,6 +117,38 @@ func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"user": user}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) getAllUsers(w http.ResponseWriter, r *http.Request) {
+	var requestQuery struct {
+		Name    string `json:"name"`
+		Email   string `json:"email"`
+		Role    string `json:"role"`
+		Filters model.Filters
+	}
+	v := validator.New()
+	qs := r.URL.Query()
+	requestQuery.Name = h.readString(qs, "name", "")
+	requestQuery.Email = h.readString(qs, "email", "")
+	requestQuery.Role = h.readString(qs, "role", "")
+	requestQuery.Filters.Page = h.readInt(qs, "page", 1, v)
+	requestQuery.Filters.PageSize = h.readInt(qs, "page_size", 20, v)
+	requestQuery.Filters.Sort = h.readString(qs, "sort", "id")
+	requestQuery.Filters.SortSafelist = []string{"id", "name", "email", "created_on", "modified_on", "-id", "-name", "-email", "-created_on", "-modified_on"}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	users, metadata, err := h.service.GetAllUsers(ctx, requestQuery.Name, requestQuery.Email, requestQuery.Role, requestQuery.Filters, v)
+	if err != nil {
+		switch {
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"users": users, "metadata": metadata}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}

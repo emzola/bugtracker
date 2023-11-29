@@ -40,7 +40,7 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*model.U
 		FROM users
 		WHERE email = $1`
 	var user model.User
-	if err := r.db.QueryRowContext(ctx, query, email).Scan(
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -52,7 +52,8 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*model.U
 		&user.ModifiedOn,
 		&user.ModifiedBy,
 		&user.Version,
-	); err != nil {
+	)
+	if err != nil {
 		switch {
 		case err.Error() == "ERROR: canceling statement due to user request":
 			return nil, fmt.Errorf("%v: %w", err, ctx.Err())
@@ -72,7 +73,7 @@ func (r *Repository) GetUserByID(ctx context.Context, id int64) (*model.User, er
 		FROM users
 		WHERE id = $1`
 	var user model.User
-	if err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -84,7 +85,8 @@ func (r *Repository) GetUserByID(ctx context.Context, id int64) (*model.User, er
 		&user.ModifiedOn,
 		&user.ModifiedBy,
 		&user.Version,
-	); err != nil {
+	)
+	if err != nil {
 		switch {
 		case err.Error() == "ERROR: canceling statement due to user request":
 			return nil, fmt.Errorf("%v: %w", err, ctx.Err())
@@ -95,6 +97,52 @@ func (r *Repository) GetUserByID(ctx context.Context, id int64) (*model.User, er
 		}
 	}
 	return &user, nil
+}
+
+// GetAllUsers returns a paginated list of all users. List can be filtered and sorted.
+func (r *Repository) GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters) ([]*model.User, model.Metadata, error) {
+	query := fmt.Sprintf(`
+		SELECT count(*) OVER(), id, name, email, password_hash, activated, role, created_on, created_by, modified_on, modified_by, version
+		FROM users
+		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		AND (LOWER(email) = LOWER($2) OR $2 = '')
+		AND (LOWER(role) = LOWER($3) OR $3 = '')
+		ORDER BY %s %s, id ASC 
+		LIMIT $4 OFFSET $5`, filters.SortColumn(), filters.SortDirection())
+	args := []interface{}{name, email, role, filters.Limit(), filters.Offset()}
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, model.Metadata{}, err
+	}
+	defer rows.Close()
+	totalRecords := 0
+	users := []*model.User{}
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&totalRecords,
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Password.Hash,
+			&user.Activated,
+			&user.Role,
+			&user.CreatedOn,
+			&user.CreatedBy,
+			&user.ModifiedOn,
+			&user.ModifiedBy,
+			&user.Version,
+		)
+		if err != nil {
+			return nil, model.Metadata{}, err
+		}
+		users = append(users, &user)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, model.Metadata{}, err
+	}
+	metadata := model.CalculateMetadata(totalRecords, filters.Page, filters.PageSize)
+	return users, metadata, nil
 }
 
 // UpdateUser updates a user's record.

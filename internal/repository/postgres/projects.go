@@ -42,7 +42,7 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 		FROM projects
 		WHERE id = $1`
 	var project model.Project
-	if err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&project.ID,
 		&project.Name,
 		&project.Description,
@@ -55,7 +55,8 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 		&project.CreatedBy,
 		&project.ModifiedBy,
 		&project.Version,
-	); err != nil {
+	)
+	if err != nil {
 		switch {
 		case err.Error() == "ERROR: canceling statement due to user request":
 			return nil, fmt.Errorf("%v: %w", err, ctx.Err())
@@ -68,8 +69,7 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 	return &project, nil
 }
 
-// GetAllprojects returns a paginated list of all projects
-// as well as filtering and sorting.
+// GetAllProjects returns a paginated list of all projects. List can be filtered and sorted.
 func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate, targetEndDate, actualEndDate time.Time, assignedTo int64, createdBy string, filters model.Filters) ([]*model.Project, model.Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, assigned_to, created_on, modified_on, created_by, modified_by, version

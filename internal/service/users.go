@@ -15,6 +15,7 @@ type userRepository interface {
 	CreateUser(ctx context.Context, user *model.User) error
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
 	GetUserByID(ctx context.Context, id int64) (*model.User, error)
+	GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters) ([]*model.User, model.Metadata, error)
 	CreateToken(ctx context.Context, userID int64, ttl time.Duration, scope string) (*model.Token, error)
 	GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error)
 	UpdateUser(ctx context.Context, user *model.User) error
@@ -94,6 +95,18 @@ func (s *Service) GetUserByID(ctx context.Context, id int64) (*model.User, error
 		}
 	}
 	return user, nil
+}
+
+// GetAllUsers returns a paginated list of all users. List can be filtered and sorted.
+func (s *Service) GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
+	if filters.Validate(v); !v.Valid() {
+		return nil, model.Metadata{}, failedValidationErr(v.Errors)
+	}
+	users, metadata, err := s.repo.GetAllUsers(ctx, name, email, role, filters)
+	if err != nil {
+		return nil, model.Metadata{}, err
+	}
+	return users, metadata, nil
 }
 
 // GetUserForToken retrieves a user whose records matches a token.
