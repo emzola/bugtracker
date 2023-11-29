@@ -18,7 +18,7 @@ func (h *Handler) Routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:project_id", h.requireActivatedUser(h.updateProject))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:project_id", h.requireActivatedUser(h.deleteProject))
 
-	router.HandlerFunc(http.MethodPost, "/v1/users", h.requireActivatedUser(h.createUser))
+	router.HandlerFunc(http.MethodPost, "/v1/users", h.createUser)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", h.activateUser)
 	router.HandlerFunc(http.MethodGet, "/v1/users/:user_id", h.requireActivatedUser(h.getUser))
 	router.HandlerFunc(http.MethodPatch, "/v1/users/:user_id", h.requireActivatedUser(h.updateUser))

@@ -13,10 +13,10 @@ import (
 )
 
 type projectService interface {
-	CreateProject(ctx context.Context, name, description, startDate, targetEndDate, createdBy, modifiedBy string) (*model.Project, error)
+	CreateProject(ctx context.Context, name, description, startDate, targetEndDate string, assignedTo *int64, createdBy, modifiedBy string) (*model.Project, error)
 	GetProject(ctx context.Context, id int64) (*model.Project, error)
-	GetAllProjects(ctx context.Context, name, startDate, targetEndDate, actualEndDate, createdby string, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error)
-	UpdateProject(ctx context.Context, id int64, name, description, startDate, targetEndDate, actualEnddate *string, modifiedBy string) (*model.Project, error)
+	GetAllProjects(ctx context.Context, name, startDate, targetEndDate, actualEndDate string, assignedTo int64, createdby string, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error)
+	UpdateProject(ctx context.Context, id int64, name, description, startDate, targetEndDate, actualEnddate *string, assignedTo *int64, modifiedBy string) (*model.Project, error)
 	DeleteProject(ctx context.Context, id int64) error
 }
 
@@ -26,6 +26,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		Description   string `json:"description"`
 		StartDate     string `json:"start_date"`
 		TargetEndDate string `json:"target_end_date"`
+		AssignedTo    *int64 `json:"assigned_to"`
 	}
 	err := h.decodeJSON(w, r, &requestBody)
 	if err != nil {
@@ -35,7 +36,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	userFromContext := h.contextGetUser(r)
-	project, err := h.service.CreateProject(ctx, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, userFromContext.Name, userFromContext.Name)
+	project, err := h.service.CreateProject(ctx, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, requestBody.AssignedTo, userFromContext.Name, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -87,6 +88,7 @@ func (h *Handler) getAllProjects(w http.ResponseWriter, r *http.Request) {
 		StartDate     string
 		TargetEndDate string
 		ActualEndDate string
+		AssignedTo    int64
 		CreatedBy     string
 		Filters       model.Filters
 	}
@@ -96,6 +98,7 @@ func (h *Handler) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	requestQuery.StartDate = h.readString(qs, "start_date", "")
 	requestQuery.TargetEndDate = h.readString(qs, "target_end_date", "")
 	requestQuery.ActualEndDate = h.readString(qs, "actual_end_date", "")
+	requestQuery.AssignedTo = int64(h.readInt(qs, "assigned_to", 0, v))
 	requestQuery.CreatedBy = h.readString(qs, "created_by", "")
 	requestQuery.Filters.Page = h.readInt(qs, "page", 1, v)
 	requestQuery.Filters.PageSize = h.readInt(qs, "page_size", 20, v)
@@ -103,7 +106,7 @@ func (h *Handler) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	requestQuery.Filters.SortSafelist = []string{"id", "name", "start_date", "target_end_date", "actual_end_date", "created_by", "-id", "-name", "-start_date", "-target_end_date", "-actual_end_date", "-created_by"}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	projects, metadata, err := h.service.GetAllProjects(ctx, requestQuery.Name, requestQuery.StartDate, requestQuery.TargetEndDate, requestQuery.ActualEndDate, requestQuery.CreatedBy, requestQuery.Filters, v)
+	projects, metadata, err := h.service.GetAllProjects(ctx, requestQuery.Name, requestQuery.StartDate, requestQuery.TargetEndDate, requestQuery.ActualEndDate, requestQuery.AssignedTo, requestQuery.CreatedBy, requestQuery.Filters, v)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrFailedValidation):
@@ -131,6 +134,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		StartDate     *string `json:"start_date"`
 		TargetEndDate *string `json:"target_end_date"`
 		ActualEndDate *string `json:"actual_end_date"`
+		AssignedTo    *int64  `json:"assigned_to"`
 	}
 	err = h.decodeJSON(w, r, &requestBody)
 	if err != nil {
@@ -140,7 +144,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	userFromContext := h.contextGetUser(r)
-	project, err := h.service.UpdateProject(ctx, projectID, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, requestBody.ActualEndDate, userFromContext.Name)
+	project, err := h.service.UpdateProject(ctx, projectID, requestBody.Name, requestBody.Description, requestBody.StartDate, requestBody.TargetEndDate, requestBody.ActualEndDate, requestBody.AssignedTo, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):

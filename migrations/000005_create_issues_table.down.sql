@@ -1,1 +1,1 @@
-DROP TABLE IS EXISTS issues;
+DROP TABLE IF EXISTS issues;

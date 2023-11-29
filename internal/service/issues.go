@@ -59,7 +59,7 @@ func (s *Service) CreateIssue(ctx context.Context, title, description, reportedD
 	}
 	// Send email notification to assigned user if issue is assigned.
 	if assignedTo != nil {
-		user, err := s.repo.GetUserByID(ctx, *assignedTo)
+		member, err := s.repo.GetUserByID(ctx, *assignedTo)
 		if err != nil {
 			switch {
 			case errors.Is(err, repository.ErrNotFound):
@@ -69,12 +69,12 @@ func (s *Service) CreateIssue(ctx context.Context, title, description, reportedD
 			}
 		}
 		data := map[string]string{
-			"name":          user.Name,
+			"name":          member.Name,
 			"issueID":       strconv.Itoa(int(issue.ID)),
 			"issueTitle":    issue.Title,
 			"issuePriority": issue.Priority,
 		}
-		s.SendEmail(data, user.Email, "issue_assign.tmpl")
+		s.SendEmail(data, member.Email, "issue_assign.tmpl")
 	}
 	return issue, nil
 }
@@ -173,7 +173,7 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 	}
 	// Send email notification to assigned user if issue is assigned.
 	if assignedTo != nil {
-		user, err := s.repo.GetUserByID(ctx, *assignedTo)
+		member, err := s.repo.GetUserByID(ctx, *assignedTo)
 		if err != nil {
 			switch {
 			case errors.Is(err, repository.ErrNotFound):
@@ -183,12 +183,12 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 			}
 		}
 		data := map[string]string{
-			"name":          user.Name,
+			"name":          member.Name,
 			"issueID":       strconv.Itoa(int(issue.ID)),
 			"issueTitle":    issue.Title,
 			"issuePriority": issue.Priority,
 		}
-		s.SendEmail(data, user.Email, "issue_assign.tmpl")
+		s.SendEmail(data, member.Email, "issue_assign.tmpl")
 	}
 	return issue, nil
 }

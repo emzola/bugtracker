@@ -14,10 +14,10 @@ import (
 // CreateProject adds a new project record.
 func (r *Repository) CreateProject(ctx context.Context, project *model.Project) error {
 	query := `
-		INSERT INTO projects (name, description, start_date, target_end_date, created_by, modified_by)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO projects (name, description, start_date, target_end_date, assigned_to, created_by, modified_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_on, modified_on, version`
-	args := []interface{}{project.Name, project.Description, project.StartDate, project.TargetEndDate, project.CreatedBy, project.ModifiedBy}
+	args := []interface{}{project.Name, project.Description, project.StartDate, project.TargetEndDate, project.AssignedTo, project.CreatedBy, project.ModifiedBy}
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&project.ID, &project.CreatedOn, &project.ModifiedOn, &project.Version)
 	if err != nil {
 		switch {
@@ -38,7 +38,7 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 		return nil, repository.ErrNotFound
 	}
 	query := `
-		SELECT id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
+		SELECT id, name, description, start_date, target_end_date, actual_end_date, assigned_to, created_on, modified_on, created_by, modified_by, version
 		FROM projects
 		WHERE id = $1`
 	var project model.Project
@@ -49,6 +49,7 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 		&project.StartDate,
 		&project.TargetEndDate,
 		&project.ActualEndDate,
+		&project.AssignedTo,
 		&project.CreatedOn,
 		&project.ModifiedOn,
 		&project.CreatedBy,
@@ -69,18 +70,19 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 
 // GetAllprojects returns a paginated list of all projects
 // as well as filtering and sorting.
-func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate, targetEndDate, actualEndDate time.Time, createdBy string, filters model.Filters) ([]*model.Project, model.Metadata, error) {
+func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate, targetEndDate, actualEndDate time.Time, assignedTo int64, createdBy string, filters model.Filters) ([]*model.Project, model.Metadata, error) {
 	query := fmt.Sprintf(`
-		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
+		SELECT count(*) OVER(), id, name, description, start_date, target_end_date, actual_end_date, assigned_to, created_on, modified_on, created_by, modified_by, version
 		FROM projects
 		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (start_date = $2 OR $2 = '0001-01-01')
 		AND (target_end_date = $3 OR $3 = '0001-01-01')
 		AND (actual_end_date = $4 OR $4 = '0001-01-01')
-		AND (LOWER(created_by) = LOWER($5) OR $5 = '')
+		AND (assigned_to = $5 OR $5 = 0)
+		AND (LOWER(created_by) = LOWER($6) OR $6 = '')
 		ORDER BY %s %s, id ASC 
-		LIMIT $6 OFFSET $7`, filters.SortColumn(), filters.SortDirection())
-	args := []interface{}{name, startDate, targetEndDate, actualEndDate, createdBy, filters.Limit(), filters.Offset()}
+		LIMIT $7 OFFSET $8`, filters.SortColumn(), filters.SortDirection())
+	args := []interface{}{name, startDate, targetEndDate, actualEndDate, assignedTo, createdBy, filters.Limit(), filters.Offset()}
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, model.Metadata{}, err
@@ -98,6 +100,7 @@ func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate,
 			&project.StartDate,
 			&project.TargetEndDate,
 			&project.ActualEndDate,
+			&project.AssignedTo,
 			&project.CreatedOn,
 			&project.ModifiedOn,
 			&project.CreatedBy,
@@ -120,10 +123,10 @@ func (r *Repository) GetAllProjects(ctx context.Context, name string, startDate,
 func (r *Repository) UpdateProject(ctx context.Context, project *model.Project) error {
 	query := `
 		UPDATE projects
-		SET name = $1, description = $2, start_date = $3, target_end_date = $4, actual_end_date = $5, modified_by = $6, modified_on = CURRENT_TIMESTAMP(0), version = version + 1
-		WHERE id = $7 AND version = $8
+		SET name = $1, description = $2, start_date = $3, target_end_date = $4, actual_end_date = $5, assigned_to = $6, modified_by = $7, modified_on = CURRENT_TIMESTAMP(0), version = version + 1
+		WHERE id = $8 AND version = $9
 		RETURNING modified_on, version`
-	args := []interface{}{project.Name, project.Description, project.StartDate, project.TargetEndDate, project.ActualEndDate, project.ModifiedBy, project.ID, project.Version}
+	args := []interface{}{project.Name, project.Description, project.StartDate, project.TargetEndDate, project.ActualEndDate, project.AssignedTo, project.ModifiedBy, project.ID, project.Version}
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&project.ModifiedOn, &project.Version)
 	if err != nil {
 		switch {
