@@ -10,6 +10,7 @@ type issuesReportRepository interface {
 	GetIssuesStatusReport(ctx context.Context, projectID int64) ([]*model.IssuesStatus, error)
 	GetIssuesAssigneeReport(ctx context.Context, projectID int64) ([]*model.IssuesAssignee, error)
 	GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error)
+	GetIssuesPriorityLevelReport(ctx context.Context, projectID int64) ([]*model.IssuesPriority, error)
 }
 
 // GetIssuesReportStatus retrieves issues status report for a specific project.
@@ -30,11 +31,20 @@ func (s *Service) GetIssuesAssigneeReport(ctx context.Context, projectID int64) 
 	return assignees, nil
 }
 
-// GetIssuesReporterReport retrieves issues кузщкеук report for a specific project.
+// GetIssuesReporterReport retrieves issues reporter report for a specific project.
 func (s *Service) GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error) {
 	reporters, err := s.repo.GetIssuesReporterReport(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	return reporters, nil
+}
+
+// GetIssuesPriorityLevelReport retrieves issues priority level report for a specific project.
+func (s *Service) GetIssuesPriorityLevelReport(ctx context.Context, projectID int64) ([]*model.IssuesPriority, error) {
+	priorityLevels, err := s.repo.GetIssuesPriorityLevelReport(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return priorityLevels, nil
 }
