@@ -147,6 +147,8 @@ func (h *Handler) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	projects, metadata, err := h.service.GetAllProjects(ctx, requestQuery.Name, requestQuery.StartDate, requestQuery.TargetEndDate, requestQuery.ActualEndDate, requestQuery.CreatedBy, requestQuery.Filters, v)
 	if err != nil {
 		switch {
+		case errors.Is(err, context.Canceled):
+			return
 		case errors.Is(err, service.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:

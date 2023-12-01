@@ -15,7 +15,7 @@ type issueService interface {
 	CreateIssue(ctx context.Context, title, description string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error)
 	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
 	GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error)
-	UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error)
+	UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, status, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error)
 	DeleteIssue(ctx context.Context, id int64) error
 }
 
@@ -111,6 +111,8 @@ func (h *Handler) getAllIssues(w http.ResponseWriter, r *http.Request) {
 	issues, metadata, err := h.service.GetAllIssues(ctx, requestQuery.Title, requestQuery.ReportedDate, requestQuery.projectID, requestQuery.AssignedTo, requestQuery.Status, requestQuery.Priority, requestQuery.Filters, v)
 	if err != nil {
 		switch {
+		case errors.Is(err, context.Canceled):
+			return
 		case errors.Is(err, service.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
@@ -134,6 +136,7 @@ func (h *Handler) updateIssue(w http.ResponseWriter, r *http.Request) {
 		Title                *string `json:"title"`
 		Description          *string `json:"description"`
 		AssignedTo           *int64  `json:"assigned_to"`
+		Status               *string `json:"status"`
 		Priority             *string `json:"priority"`
 		TargetResolutionDate *string `json:"target_resolution_date"`
 		Progress             *string `json:"progress"`
@@ -148,7 +151,7 @@ func (h *Handler) updateIssue(w http.ResponseWriter, r *http.Request) {
 	userFromContext := h.contextGetUser(r)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	issue, err := h.service.UpdateIssue(ctx, issueID, requestBody.Title, requestBody.Description, requestBody.AssignedTo, requestBody.Priority, requestBody.TargetResolutionDate, requestBody.Progress, requestBody.ActualResolutionDate, requestBody.ResolutionSummary, userFromContext.Name)
+	issue, err := h.service.UpdateIssue(ctx, issueID, requestBody.Title, requestBody.Description, requestBody.AssignedTo, requestBody.Status, requestBody.Priority, requestBody.TargetResolutionDate, requestBody.Progress, requestBody.ActualResolutionDate, requestBody.ResolutionSummary, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):

@@ -143,6 +143,10 @@ func (h *Handler) getAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, metadata, err := h.service.GetAllUsers(ctx, requestQuery.Name, requestQuery.Email, requestQuery.Role, requestQuery.Filters, v)
 	if err != nil {
 		switch {
+		case errors.Is(err, context.Canceled):
+			return
+		case errors.Is(err, service.ErrFailedValidation):
+			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
 		}

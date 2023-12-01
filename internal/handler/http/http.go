@@ -7,6 +7,7 @@ type ServiceLayer interface {
 	userService
 	tokenService
 	issueService
+	issuesReportService
 }
 
 // Handler defines the app's HTTP handler.

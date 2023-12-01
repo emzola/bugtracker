@@ -117,7 +117,7 @@ func (s *Service) GetAllIssues(ctx context.Context, title, reportedDate string, 
 }
 
 // UpdateIssue updates an issue's details.
-func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error) {
+func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, status, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error) {
 	issue, err := s.repo.GetIssue(ctx, id)
 	if err != nil {
 		switch {
@@ -151,6 +151,9 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 			return nil, ErrInvalidRole
 		}
 		issue.AssignedTo = &user.ID
+	}
+	if status != nil {
+		issue.Status = *status
 	}
 	if priority != nil {
 		issue.Priority = *priority

@@ -10,6 +10,7 @@ type RepositoryLayer interface {
 	userRepository
 	tokenRepository
 	issueRepository
+	issuesReportRepository
 }
 
 // Controller defines a new project service controller.

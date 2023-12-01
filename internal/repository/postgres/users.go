@@ -112,7 +112,12 @@ func (r *Repository) GetAllUsers(ctx context.Context, name, email, role string, 
 	args := []interface{}{name, email, role, filters.Limit(), filters.Offset()}
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, model.Metadata{}, err
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return nil, model.Metadata{}, fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return nil, model.Metadata{}, err
+		}
 	}
 	defer rows.Close()
 	totalRecords := 0
@@ -159,7 +164,12 @@ func (r *Repository) GetProjectUsers(ctx context.Context, projectID int64, role 
 	args := []interface{}{projectID, role, filters.Limit(), filters.Offset()}
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, model.Metadata{}, err
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return nil, model.Metadata{}, fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return nil, model.Metadata{}, err
+		}
 	}
 	defer rows.Close()
 	totalRecords := 0

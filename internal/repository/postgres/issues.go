@@ -89,7 +89,12 @@ func (r *Repository) GetAllIssues(ctx context.Context, title string, reportedDat
 	args := []interface{}{title, reportedDate, projectID, assignedTo, status, priority, filters.Limit(), filters.Offset()}
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, model.Metadata{}, err
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return nil, model.Metadata{}, fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return nil, model.Metadata{}, err
+		}
 	}
 	defer rows.Close()
 	totalRecords := 0
