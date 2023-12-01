@@ -152,3 +152,37 @@ func (r *Repository) GetIssuesPriorityLevelReport(ctx context.Context, projectID
 	}
 	return priorities, nil
 }
+
+// GetIssuesPriorityLevelReport retrieves the count of issue priority levels for a specific project record.
+func (r *Repository) GetIssuesTargetDateReport(ctx context.Context, projectID int64) ([]*model.IssuesTargetDate, error) {
+	query := `
+		SELECT title, target_resolution_date
+		FROM issues
+		WHERE project_id = $1`
+	rows, err := r.db.QueryContext(ctx, query, projectID)
+	if err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return nil, fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return nil, err
+		}
+	}
+	defer rows.Close()
+	targetDates := []*model.IssuesTargetDate{}
+	for rows.Next() {
+		var targetDate model.IssuesTargetDate
+		err := rows.Scan(
+			&targetDate.Title,
+			&targetDate.TargetResolutionDate,
+		)
+		if err != nil {
+			return nil, err
+		}
+		targetDates = append(targetDates, &targetDate)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return targetDates, nil
+}

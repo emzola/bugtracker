@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // IssueStatus holds data for issues status report.
 type IssuesStatus struct {
 	Status      string `json:"issue_status"`
@@ -24,4 +26,10 @@ type IssuesReporter struct {
 type IssuesPriority struct {
 	Priority    string `json:"issue_priority"`
 	IssuesCount int64  `json:"issues_count"`
+}
+
+// IssuesTargetDate holds data for target resolution date reports
+type IssuesTargetDate struct {
+	Title                string    `json:"issue_title"`
+	TargetResolutionDate time.Time `json:"target_resolution_date"`
 }

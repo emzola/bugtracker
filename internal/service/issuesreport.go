@@ -11,6 +11,7 @@ type issuesReportRepository interface {
 	GetIssuesAssigneeReport(ctx context.Context, projectID int64) ([]*model.IssuesAssignee, error)
 	GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error)
 	GetIssuesPriorityLevelReport(ctx context.Context, projectID int64) ([]*model.IssuesPriority, error)
+	GetIssuesTargetDateReport(ctx context.Context, projectID int64) ([]*model.IssuesTargetDate, error)
 }
 
 // GetIssuesReportStatus retrieves issues status report for a specific project.
@@ -47,4 +48,13 @@ func (s *Service) GetIssuesPriorityLevelReport(ctx context.Context, projectID in
 		return nil, err
 	}
 	return priorityLevels, nil
+}
+
+// GetIssuesTargetDateReport retrieves issues target date report for a specific project.
+func (s *Service) GetIssuesTargetDateReport(ctx context.Context, projectID int64) ([]*model.IssuesTargetDate, error) {
+	targetDates, err := s.repo.GetIssuesTargetDateReport(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return targetDates, nil
 }

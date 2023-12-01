@@ -24,6 +24,7 @@ func (h *Handler) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/issuesreport/assignee", h.requireActivatedUser(h.getIssuesAssigneeReport))
 	router.HandlerFunc(http.MethodGet, "/v1/issuesreport/reporter", h.requireActivatedUser(h.getIssuesReporterReport))
 	router.HandlerFunc(http.MethodGet, "/v1/issuesreport/priority", h.requireActivatedUser(h.getIssuesPriorityLevelReport))
+	router.HandlerFunc(http.MethodGet, "/v1/issuesreport/date", h.requireActivatedUser(h.getIssuesTargetDateReport))
 
 	router.HandlerFunc(http.MethodGet, "/v1/users", h.requireActivatedUser(h.getAllUsers))
 	router.HandlerFunc(http.MethodPost, "/v1/users", h.createUser)

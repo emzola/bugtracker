@@ -15,6 +15,7 @@ type issuesReportService interface {
 	GetIssuesAssigneeReport(ctx context.Context, projectID int64) ([]*model.IssuesAssignee, error)
 	GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error)
 	GetIssuesPriorityLevelReport(ctx context.Context, projectID int64) ([]*model.IssuesPriority, error)
+	GetIssuesTargetDateReport(ctx context.Context, projectID int64) ([]*model.IssuesTargetDate, error)
 }
 
 func (h *Handler) getIssuesStatusReport(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +113,31 @@ func (h *Handler) getIssuesPriorityLevelReport(w http.ResponseWriter, r *http.Re
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"report": priorityLevels}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) getIssuesTargetDateReport(w http.ResponseWriter, r *http.Request) {
+	var requestQuery struct {
+		ProjectID int64
+	}
+	v := validator.New()
+	qs := r.URL.Query()
+	requestQuery.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	targetDates, err := h.service.GetIssuesTargetDateReport(ctx, requestQuery.ProjectID)
+	if err != nil {
+		switch {
+		case errors.Is(err, context.Canceled):
+			return
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"report": targetDates}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}
