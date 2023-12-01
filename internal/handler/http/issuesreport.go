@@ -13,6 +13,7 @@ import (
 type issuesReportService interface {
 	GetIssuesStatusReport(ctx context.Context, projectID int64) ([]*model.IssuesStatus, error)
 	GetIssuesAssigneeReport(ctx context.Context, projectID int64) ([]*model.IssuesAssignee, error)
+	GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error)
 }
 
 func (h *Handler) getIssuesStatusReport(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +61,31 @@ func (h *Handler) getIssuesAssigneeReport(w http.ResponseWriter, r *http.Request
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"report": assignees}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) getIssuesReporterReport(w http.ResponseWriter, r *http.Request) {
+	var requestQuery struct {
+		ProjectID int64
+	}
+	v := validator.New()
+	qs := r.URL.Query()
+	requestQuery.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	reporters, err := h.service.GetIssuesReporterReport(ctx, requestQuery.ProjectID)
+	if err != nil {
+		switch {
+		case errors.Is(err, context.Canceled):
+			return
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"report": reporters}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}

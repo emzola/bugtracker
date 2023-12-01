@@ -9,6 +9,7 @@ import (
 type issuesReportRepository interface {
 	GetIssuesStatusReport(ctx context.Context, projectID int64) ([]*model.IssuesStatus, error)
 	GetIssuesAssigneeReport(ctx context.Context, projectID int64) ([]*model.IssuesAssignee, error)
+	GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error)
 }
 
 // GetIssuesReportStatus retrieves issues status report for a specific project.
@@ -27,4 +28,13 @@ func (s *Service) GetIssuesAssigneeReport(ctx context.Context, projectID int64) 
 		return nil, err
 	}
 	return assignees, nil
+}
+
+// GetIssuesReporterReport retrieves issues кузщкеук report for a specific project.
+func (s *Service) GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error) {
+	reporters, err := s.repo.GetIssuesReporterReport(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return reporters, nil
 }

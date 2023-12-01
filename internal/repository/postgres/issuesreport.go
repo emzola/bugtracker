@@ -29,7 +29,7 @@ func (r *Repository) GetIssuesStatusReport(ctx context.Context, projectID int64)
 		var status model.IssuesStatus
 		err := rows.Scan(
 			&status.Status,
-			&status.Count,
+			&status.IssuesCount,
 		)
 		if err != nil {
 			return nil, err
@@ -67,7 +67,7 @@ func (r *Repository) GetIssuesAssigneeReport(ctx context.Context, projectID int6
 		err := rows.Scan(
 			&assignee.AssigneeID,
 			&assignee.AssigneeName,
-			&assignee.Count,
+			&assignee.IssuesAssigned,
 		)
 		if err != nil {
 			return nil, err
@@ -78,4 +78,42 @@ func (r *Repository) GetIssuesAssigneeReport(ctx context.Context, projectID int6
 		return nil, err
 	}
 	return assignees, nil
+}
+
+// GetIssuesAssigneeReport retrieves the count of issue assignees for a specific project record.
+func (r *Repository) GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error) {
+	query := `
+		SELECT users.id, users.name, COUNT(users.id)
+		FROM users
+		LEFT JOIN issues
+		ON users.id = issues.reporter_id
+		WHERE project_id = $1
+		GROUP BY users.id`
+	rows, err := r.db.QueryContext(ctx, query, projectID)
+	if err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return nil, fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return nil, err
+		}
+	}
+	defer rows.Close()
+	reporters := []*model.IssuesReporter{}
+	for rows.Next() {
+		var reporter model.IssuesReporter
+		err := rows.Scan(
+			&reporter.ReporterID,
+			&reporter.ReporterName,
+			&reporter.IssuesReported,
+		)
+		if err != nil {
+			return nil, err
+		}
+		reporters = append(reporters, &reporter)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return reporters, nil
 }
