@@ -124,57 +124,6 @@ func (r *Repository) GetAllProjects(ctx context.Context, name string, assignedTo
 	return projects, metadata, nil
 }
 
-// GetAllProjectsForUser returns a paginated list of all projects for a specific user.
-func (r *Repository) GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters) ([]*model.Project, model.Metadata, error) {
-	query := fmt.Sprintf(`
-		SELECT count(*) OVER(), projects.id, projects.name, projects.description, projects.start_date, projects.target_end_date, projects.actual_end_date, projects.created_on, projects.modified_on, projects.created_by, projects.modified_by, projects.version
-		FROM projects
-		INNER JOIN projects_users ON projects_users.project_id = projects.id
-		INNER JOIN users ON projects_users.user_id = users.id
-		WHERE users.id = $1
-		ORDER BY %s %s, id ASC 
-		LIMIT $2 OFFSET $3`, filters.SortColumn(), filters.SortDirection())
-	args := []interface{}{userID, filters.Limit(), filters.Offset()}
-	rows, err := r.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		switch {
-		case err.Error() == "ERROR: canceling statement due to user request":
-			return nil, model.Metadata{}, fmt.Errorf("%v: %w", err, ctx.Err())
-		default:
-			return nil, model.Metadata{}, err
-		}
-	}
-	defer rows.Close()
-	totalRecords := 0
-	projects := []*model.Project{}
-	for rows.Next() {
-		var project model.Project
-		err := rows.Scan(
-			&totalRecords,
-			&project.ID,
-			&project.Name,
-			&project.Description,
-			&project.StartDate,
-			&project.TargetEndDate,
-			&project.ActualEndDate,
-			&project.CreatedOn,
-			&project.ModifiedOn,
-			&project.CreatedBy,
-			&project.ModifiedBy,
-			&project.Version,
-		)
-		if err != nil {
-			return nil, model.Metadata{}, err
-		}
-		projects = append(projects, &project)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, model.Metadata{}, err
-	}
-	metadata := model.CalculateMetadata(totalRecords, filters.Page, filters.PageSize)
-	return projects, metadata, nil
-}
-
 // UpdateProject updates a project's record.
 func (r *Repository) UpdateProject(ctx context.Context, project *model.Project) error {
 	query := `
@@ -310,4 +259,55 @@ func (r *Repository) GetProjectUser(ctx context.Context, projectID, userID int64
 		}
 	}
 	return &user, nil
+}
+
+// GetAllProjectsForUser returns a paginated list of all projects for a specific user.
+func (r *Repository) GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters) ([]*model.Project, model.Metadata, error) {
+	query := fmt.Sprintf(`
+		SELECT count(*) OVER(), projects.id, projects.name, projects.description, projects.start_date, projects.target_end_date, projects.actual_end_date, projects.created_on, projects.modified_on, projects.created_by, projects.modified_by, projects.version
+		FROM projects
+		INNER JOIN projects_users ON projects_users.project_id = projects.id
+		INNER JOIN users ON projects_users.user_id = users.id
+		WHERE users.id = $1
+		ORDER BY %s %s, id ASC 
+		LIMIT $2 OFFSET $3`, filters.SortColumn(), filters.SortDirection())
+	args := []interface{}{userID, filters.Limit(), filters.Offset()}
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return nil, model.Metadata{}, fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return nil, model.Metadata{}, err
+		}
+	}
+	defer rows.Close()
+	totalRecords := 0
+	projects := []*model.Project{}
+	for rows.Next() {
+		var project model.Project
+		err := rows.Scan(
+			&totalRecords,
+			&project.ID,
+			&project.Name,
+			&project.Description,
+			&project.StartDate,
+			&project.TargetEndDate,
+			&project.ActualEndDate,
+			&project.CreatedOn,
+			&project.ModifiedOn,
+			&project.CreatedBy,
+			&project.ModifiedBy,
+			&project.Version,
+		)
+		if err != nil {
+			return nil, model.Metadata{}, err
+		}
+		projects = append(projects, &project)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, model.Metadata{}, err
+	}
+	metadata := model.CalculateMetadata(totalRecords, filters.Page, filters.PageSize)
+	return projects, metadata, nil
 }

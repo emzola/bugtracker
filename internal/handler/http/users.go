@@ -21,6 +21,7 @@ type userService interface {
 	UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedby string) (*model.User, error)
 	DeleteUser(ctx context.Context, id int64) error
 	AssignUserToProject(ctx context.Context, userID, projectID int64) error
+	GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error)
 }
 
 func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
@@ -255,6 +256,41 @@ func (h *Handler) assignUserToProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"message": "user successfully assigned to project"}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) getAllProjectsForUser(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.readIDParam(r, "user_id")
+	if err != nil {
+		h.notFoundResponse(w, r)
+		return
+	}
+	var requestQuery struct {
+		Filters model.Filters
+	}
+	v := validator.New()
+	qs := r.URL.Query()
+	requestQuery.Filters.Page = h.readInt(qs, "page", 1, v)
+	requestQuery.Filters.PageSize = h.readInt(qs, "page_size", 20, v)
+	requestQuery.Filters.Sort = h.readString(qs, "sort", "id")
+	requestQuery.Filters.SortSafelist = []string{"id", "-id"}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	projects, metadata, err := h.service.GetAllProjectsForUser(ctx, userID, requestQuery.Filters, v)
+	if err != nil {
+		switch {
+		case errors.Is(err, context.Canceled):
+			return
+		case errors.Is(err, service.ErrFailedValidation):
+			h.failedValidationResponse(w, r, err)
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"projects": projects, "metadata": metadata}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}

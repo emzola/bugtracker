@@ -32,6 +32,7 @@ func (h *Handler) Routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/users/:user_id", h.requireActivatedUser(h.updateUser))
 	router.HandlerFunc(http.MethodDelete, "/v1/users/:user_id", h.requireActivatedUser(h.deleteUser))
 	router.HandlerFunc(http.MethodPost, "/v1/users/:user_id/projects", h.requireActivatedUser(h.assignUserToProject))
+	router.HandlerFunc(http.MethodGet, "/v1/users/:user_id/projects", h.requireActivatedUser(h.getAllProjectsForUser))
 
 	router.HandlerFunc(http.MethodGet, "/v1/issues", h.requireActivatedUser(h.getAllIssues))
 	router.HandlerFunc(http.MethodPost, "/v1/issues", h.requireActivatedUser(h.createIssue))

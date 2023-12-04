@@ -21,6 +21,7 @@ type userRepository interface {
 	UpdateUser(ctx context.Context, user *model.User) error
 	DeleteUser(ctx context.Context, id int64) error
 	AssignUserToProject(ctx context.Context, userID, projectID int64) error
+	GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters) ([]*model.Project, model.Metadata, error)
 }
 
 // CreateUser adds a new user.
@@ -250,4 +251,16 @@ func (s *Service) AssignUserToProject(ctx context.Context, userID, projectID int
 	// 	s.SendEmail(data, assignee.Email, "project_assign.tmpl")
 	// }
 	return nil
+}
+
+// GetAllProjectsForUser retrieves all projects for a user
+func (s *Service) GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
+	if filters.Validate(v); !v.Valid() {
+		return nil, model.Metadata{}, failedValidationErr(v.Errors)
+	}
+	projects, metadata, err := s.repo.GetAllProjectsForUser(ctx, userID, filters)
+	if err != nil {
+		return nil, model.Metadata{}, err
+	}
+	return projects, metadata, nil
 }
