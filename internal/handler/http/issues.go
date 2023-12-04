@@ -15,7 +15,7 @@ type issueService interface {
 	CreateIssue(ctx context.Context, title, description string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error)
 	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
 	GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error)
-	UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, status, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, modifiedBy string) (*model.Issue, error)
+	UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, status, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, user *model.User) (*model.Issue, error)
 	DeleteIssue(ctx context.Context, id int64) error
 }
 
@@ -151,11 +151,13 @@ func (h *Handler) updateIssue(w http.ResponseWriter, r *http.Request) {
 	userFromContext := h.contextGetUser(r)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	issue, err := h.service.UpdateIssue(ctx, issueID, requestBody.Title, requestBody.Description, requestBody.AssignedTo, requestBody.Status, requestBody.Priority, requestBody.TargetResolutionDate, requestBody.Progress, requestBody.ActualResolutionDate, requestBody.ResolutionSummary, userFromContext.Name)
+	issue, err := h.service.UpdateIssue(ctx, issueID, requestBody.Title, requestBody.Description, requestBody.AssignedTo, requestBody.Status, requestBody.Priority, requestBody.TargetResolutionDate, requestBody.Progress, requestBody.ActualResolutionDate, requestBody.ResolutionSummary, userFromContext)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
+		case errors.Is(err, service.ErrNotPermitted):
+			h.notPermittedResponse(w, r)
 		case errors.Is(err, service.ErrNotFound):
 			h.notFoundResponse(w, r)
 		case errors.Is(err, service.ErrInvalidRole):

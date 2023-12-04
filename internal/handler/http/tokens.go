@@ -40,7 +40,14 @@ func (h *Handler) createActivationToken(w http.ResponseWriter, r *http.Request) 
 	}
 	err = h.service.CreateActivationToken(ctx, user)
 	if err != nil {
-		h.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, context.Canceled):
+			return
+		case errors.Is(err, service.ErrActivated):
+			h.alreadyActivatedResponse(w, r)
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"message": "an email will be sent to you containing activation instructions"}, nil)

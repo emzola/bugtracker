@@ -20,6 +20,7 @@ type userService interface {
 	ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error
 	UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedby string) (*model.User, error)
 	DeleteUser(ctx context.Context, id int64) error
+	AssignUserToProject(ctx context.Context, userID, projectID int64) error
 }
 
 func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
@@ -216,6 +217,44 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = h.encodeJSON(w, http.StatusOK, envelop{"message": "user successfully deleted"}, nil)
+	if err != nil {
+		h.serverErrorResponse(w, r, err)
+	}
+}
+
+func (h *Handler) assignUserToProject(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.readIDParam(r, "user_id")
+	if err != nil {
+		h.notFoundResponse(w, r)
+		return
+	}
+	var requestBody struct {
+		ProjectID int64 `json:"project_id"`
+	}
+	err = h.decodeJSON(w, r, &requestBody)
+	if err != nil {
+		h.badRequestResponse(w, r, err)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	err = h.service.AssignUserToProject(ctx, userID, requestBody.ProjectID)
+	if err != nil {
+		switch {
+		case errors.Is(err, context.Canceled):
+			return
+		case errors.Is(err, service.ErrNotFound):
+			h.notFoundResponse(w, r)
+		case errors.Is(err, service.ErrInvalidRole):
+			h.invalidRoleResponse(w, r)
+		case errors.Is(err, service.ErrFailedValidation):
+			h.failedValidationResponse(w, r, err)
+		default:
+			h.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = h.encodeJSON(w, http.StatusOK, envelop{"message": "user successfully assigned to project"}, nil)
 	if err != nil {
 		h.serverErrorResponse(w, r, err)
 	}

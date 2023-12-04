@@ -11,6 +11,7 @@ type Project struct {
 	ID            int64      `json:"id"`
 	Name          string     `json:"name"`
 	Description   string     `json:"description,omitempty"`
+	AssignedTo    *int64     `json:"assigned_to,omitempty"`
 	StartDate     time.Time  `json:"start_date"`
 	TargetEndDate time.Time  `json:"target_end_date"`
 	ActualEndDate *time.Time `json:"actual_end_date,omitempty"`

@@ -20,6 +20,7 @@ type userRepository interface {
 	GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error)
 	UpdateUser(ctx context.Context, user *model.User) error
 	DeleteUser(ctx context.Context, id int64) error
+	AssignUserToProject(ctx context.Context, userID, projectID int64) error
 }
 
 // CreateUser adds a new user.
@@ -201,5 +202,52 @@ func (s *Service) DeleteUser(ctx context.Context, id int64) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// AssignUserToProject assigns a user to a project.
+func (s *Service) AssignUserToProject(ctx context.Context, userID, projectID int64) error {
+	v := validator.New()
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return ErrNotFound
+		default:
+			return err
+		}
+	}
+	project, err := s.repo.GetProject(ctx, projectID)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return ErrNotFound
+		default:
+			return err
+		}
+	}
+	if user.Role != "member" {
+		return ErrInvalidRole
+	}
+	err = s.repo.AssignUserToProject(ctx, user.ID, project.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrDuplicateKey):
+			v.AddError("user", "already assigned to project")
+			return failedValidationErr(v.Errors)
+		default:
+			return err
+		}
+	}
+	// Send email notification to assigned user.
+	// data := map[string]string{
+	// 	"name":        user.Name,
+	// 	"projectID":   strconv.Itoa(int(project.ID)),
+	// 	"projectName": project.Name,
+	// }
+	// // Send email notification to assignee only if assignee is project lead.
+	// if assignee.Role == "lead" {
+	// 	s.SendEmail(data, assignee.Email, "project_assign.tmpl")
+	// }
 	return nil
 }

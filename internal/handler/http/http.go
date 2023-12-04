@@ -1,6 +1,9 @@
 package http
 
-import "github.com/emzola/issuetracker/config"
+import (
+	"github.com/emzola/issuetracker/config"
+	"github.com/emzola/issuetracker/pkg/rbac"
+)
 
 type ServiceLayer interface {
 	projectService
@@ -14,9 +17,10 @@ type ServiceLayer interface {
 type Handler struct {
 	service ServiceLayer
 	Config  config.AppConfiguration
+	roles   rbac.Roles
 }
 
 // New creates a new HTTP handler.
-func New(service ServiceLayer, cfg config.AppConfiguration) *Handler {
-	return &Handler{service, cfg}
+func New(service ServiceLayer, cfg config.AppConfiguration, roles rbac.Roles) *Handler {
+	return &Handler{service, cfg, roles}
 }

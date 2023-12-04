@@ -13,16 +13,16 @@ import (
 
 type projectRepository interface {
 	CreateProject(ctx context.Context, project *model.Project) error
-	AssignProject(ctx context.Context, projectID, userID int64) error
 	GetProject(ctx context.Context, id int64) (*model.Project, error)
-	GetAllProjects(ctx context.Context, name string, startDate, targetEndDate, actualEndDate time.Time, createdBy string, filters model.Filters) ([]*model.Project, model.Metadata, error)
-	GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters) ([]*model.User, model.Metadata, error)
+	GetAllProjects(ctx context.Context, name string, assignedTo int64, startDate, targetEndDate, actualEndDate time.Time, createdBy string, filters model.Filters) ([]*model.Project, model.Metadata, error)
 	UpdateProject(ctx context.Context, project *model.Project) error
 	DeleteProject(ctx context.Context, id int64) error
+	GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters) ([]*model.User, model.Metadata, error)
+	GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error)
 }
 
 // CreateProject adds a new project.
-func (s *Service) CreateProject(ctx context.Context, name, description, startDate, targetEndDate, createdBy, modifiedBy string) (*model.Project, error) {
+func (s *Service) CreateProject(ctx context.Context, name, description string, assignedTo *int64, startDate, targetEndDate, createdBy, modifiedBy string) (*model.Project, error) {
 	project := &model.Project{
 		Name:        name,
 		Description: description,
@@ -43,11 +43,32 @@ func (s *Service) CreateProject(ctx context.Context, name, description, startDat
 		}
 		project.TargetEndDate = targetEnd
 	}
+	// Projects can only be assigned to users with role 'lead'.
+	// Before project is assigned, attempt to fetch the assignee.
+	// If the assignee's role is not 'lead', return an error.
+	var assignee *model.User
+	var err error
+	if assignedTo != nil {
+		assignee, err = s.repo.GetUserByID(ctx, *assignedTo)
+		if err != nil {
+			switch {
+			case errors.Is(err, repository.ErrNotFound):
+				return nil, ErrNotFound
+			default:
+				return nil, err
+			}
+		}
+		if assignee.Role != "lead" {
+			return nil, ErrInvalidRole
+		}
+		// Assign lead to project.
+		project.AssignedTo = &assignee.ID
+	}
 	v := validator.New()
 	if project.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err := s.repo.CreateProject(ctx, project)
+	err = s.repo.CreateProject(ctx, project)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateKey):
@@ -57,51 +78,16 @@ func (s *Service) CreateProject(ctx context.Context, name, description, startDat
 			return nil, err
 		}
 	}
+	// Send email notification to assigned user if project is assigned.
+	if assignedTo != nil {
+		data := map[string]string{
+			"name":        assignee.Name,
+			"projectID":   strconv.Itoa(int(project.ID)),
+			"projectName": project.Name,
+		}
+		s.SendEmail(data, assignee.Email, "project_assign.tmpl")
+	}
 	return project, nil
-}
-
-// AssignProject assigns a project to a user.
-func (s *Service) AssignProject(ctx context.Context, projectID, userID int64) error {
-	v := validator.New()
-	project, err := s.repo.GetProject(ctx, projectID)
-	if err != nil {
-		switch {
-		case errors.Is(err, repository.ErrNotFound):
-			return ErrNotFound
-		default:
-			return err
-		}
-	}
-	user, err := s.repo.GetUserByID(ctx, userID)
-	if err != nil {
-		switch {
-		case errors.Is(err, repository.ErrNotFound):
-			return ErrNotFound
-		default:
-			return err
-		}
-	}
-	if user.Role != "lead" && user.Role != "member" {
-		return ErrInvalidRole
-	}
-	err = s.repo.AssignProject(ctx, project.ID, user.ID)
-	if err != nil {
-		switch {
-		case errors.Is(err, repository.ErrDuplicateKey):
-			v.AddError("user id", "already assigned to project")
-			return failedValidationErr(v.Errors)
-		default:
-			return err
-		}
-	}
-	// Send email notification to assigned user.
-	data := map[string]string{
-		"name":        user.Name,
-		"projectID":   strconv.Itoa(int(project.ID)),
-		"projectName": project.Name,
-	}
-	s.SendEmail(data, user.Email, "project_assign.tmpl")
-	return nil
 }
 
 // GetProject retrieves a project by id.
@@ -119,7 +105,7 @@ func (s *Service) GetProject(ctx context.Context, id int64) (*model.Project, err
 }
 
 // GetAllProjects returns a paginated list of all projects. List can be filtered and sorted.
-func (s *Service) GetAllProjects(ctx context.Context, name, startDate, targetEndDate, actualEndDate, createdBy string, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
+func (s *Service) GetAllProjects(ctx context.Context, name string, assignedTo int64, startDate, targetEndDate, actualEndDate, createdBy string, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
 	}
@@ -143,27 +129,15 @@ func (s *Service) GetAllProjects(ctx context.Context, name, startDate, targetEnd
 			return nil, model.Metadata{}, err
 		}
 	}
-	projects, metadata, err := s.repo.GetAllProjects(ctx, name, start, targetEnd, actualEnd, createdBy, filters)
+	projects, metadata, err := s.repo.GetAllProjects(ctx, name, assignedTo, start, targetEnd, actualEnd, createdBy, filters)
 	if err != nil {
 		return nil, model.Metadata{}, err
 	}
 	return projects, metadata, nil
 }
 
-// GetAllProjectUsers returns a paginated list of all project users. List can be filtered and sorted.
-func (s *Service) GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
-	if filters.Validate(v); !v.Valid() {
-		return nil, model.Metadata{}, failedValidationErr(v.Errors)
-	}
-	users, metadata, err := s.repo.GetProjectUsers(ctx, projectID, role, filters)
-	if err != nil {
-		return nil, model.Metadata{}, err
-	}
-	return users, metadata, nil
-}
-
 // UpdateProject updates a project's details.
-func (s *Service) UpdateProject(ctx context.Context, id int64, name, description, startDate, targetEndDate, actualEndDate *string, modifiedBy string) (*model.Project, error) {
+func (s *Service) UpdateProject(ctx context.Context, id int64, name, description *string, assignedTo *int64, startDate, targetEndDate, actualEndDate *string, user *model.User) (*model.Project, error) {
 	project, err := s.repo.GetProject(ctx, id)
 	if err != nil {
 		switch {
@@ -173,6 +147,12 @@ func (s *Service) UpdateProject(ctx context.Context, id int64, name, description
 			return nil, err
 		}
 	}
+	// Check whether user has permission to update project.
+	// Leads can update project details only if it's assigned to them.
+	if user.Role == "lead" && *project.AssignedTo != user.ID {
+		return nil, ErrNotPermitted
+	}
+	// At this point, update project as usual.
 	if name != nil {
 		project.Name = *name
 	}
@@ -200,7 +180,26 @@ func (s *Service) UpdateProject(ctx context.Context, id int64, name, description
 		}
 		project.ActualEndDate = &actualEnd
 	}
-	project.ModifiedBy = modifiedBy
+	project.ModifiedBy = user.ModifiedBy
+	// Only managers can assign projects to leads. Before project is assigned,
+	// attempt to fetch the assignee. If the assignee's role is not 'lead', return an error.
+	var assignee *model.User
+	if assignedTo != nil && user.Role == "manager" {
+		assignee, err = s.repo.GetUserByID(ctx, *assignedTo)
+		if err != nil {
+			switch {
+			case errors.Is(err, repository.ErrNotFound):
+				return nil, ErrNotFound
+			default:
+				return nil, err
+			}
+		}
+		if assignee.Role != "lead" {
+			return nil, ErrInvalidRole
+		}
+		// Assign lead to project.
+		project.AssignedTo = &assignee.ID
+	}
 	v := validator.New()
 	if project.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
@@ -213,6 +212,15 @@ func (s *Service) UpdateProject(ctx context.Context, id int64, name, description
 		default:
 			return nil, err
 		}
+	}
+	// Send email notification to assigned lead if project is assigned.
+	if assignedTo != nil && user.Role == "manager" {
+		data := map[string]string{
+			"name":        assignee.Name,
+			"projectID":   strconv.Itoa(int(project.ID)),
+			"projectName": project.Name,
+		}
+		s.SendEmail(data, assignee.Email, "project_assign.tmpl")
 	}
 	return project, nil
 }
@@ -229,4 +237,30 @@ func (s *Service) DeleteProject(ctx context.Context, id int64) error {
 		}
 	}
 	return nil
+}
+
+// GetProjectUsers returns a paginated list of all project users. List can be filtered and sorted.
+func (s *Service) GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
+	if filters.Validate(v); !v.Valid() {
+		return nil, model.Metadata{}, failedValidationErr(v.Errors)
+	}
+	users, metadata, err := s.repo.GetProjectUsers(ctx, projectID, role, filters)
+	if err != nil {
+		return nil, model.Metadata{}, err
+	}
+	return users, metadata, nil
+}
+
+// GetProjectUser returns a user for a specific project.
+func (s *Service) GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error) {
+	user, err := s.repo.GetProjectUser(ctx, projectID, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+	return user, nil
 }

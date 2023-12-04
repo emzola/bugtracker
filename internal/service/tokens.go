@@ -19,6 +19,9 @@ type tokenRepository interface {
 
 // CreateActivationToken creates a new activation token and emails it to user.
 func (s *Service) CreateActivationToken(ctx context.Context, user *model.User) error {
+	if user.Activated {
+		return ErrActivated
+	}
 	token, err := s.repo.CreateToken(ctx, user.ID, 3*24*time.Hour, model.ScopeActivation)
 	if err != nil {
 		return err

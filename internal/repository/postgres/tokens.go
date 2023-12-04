@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base32"
+	"fmt"
 	"time"
 
 	"github.com/emzola/issuetracker/internal/model"
@@ -49,7 +50,15 @@ func (r *Repository) InsertToken(ctx context.Context, token *model.Token) error 
 		VALUES ($1, $2, $3, $4)`
 	args := []interface{}{token.Hash, token.UserID, token.Expiry, token.Scope}
 	_, err := r.db.ExecContext(ctx, query, args...)
-	return err
+	if err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return err
+		}
+	}
+	return nil
 }
 
 // DeleteAllTokensForUser deletes all tokens for a specific user and scope.
@@ -58,5 +67,13 @@ func (r *Repository) DeleteAllTokensForUser(ctx context.Context, scope string, u
 		DELETE FROM tokens
 		WHERE scope = $1 AND user_id = $2`
 	_, err := r.db.ExecContext(ctx, query, scope, userID)
-	return err
+	if err != nil {
+		switch {
+		case err.Error() == "ERROR: canceling statement due to user request":
+			return fmt.Errorf("%v: %w", err, ctx.Err())
+		default:
+			return err
+		}
+	}
+	return nil
 }

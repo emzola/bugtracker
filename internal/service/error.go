@@ -22,6 +22,12 @@ var (
 
 	// ErrInvalidRole is returned when user role is not allowed.
 	ErrInvalidRole = errors.New("invalid role")
+
+	// ErrActivated is returned when user account is already activated.
+	ErrActivated = errors.New("invalid role")
+
+	// ErrNotPermitted is returned when user account does not have permission to a resource.
+	ErrNotPermitted = errors.New("not permitted")
 )
 
 // failedValidationErr loops through an errors map and returns ErrFailedValidation

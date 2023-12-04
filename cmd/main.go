@@ -10,6 +10,7 @@ import (
 	httpHandler "github.com/emzola/issuetracker/internal/handler/http"
 	"github.com/emzola/issuetracker/internal/repository/postgres"
 	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/pkg/rbac"
 
 	"go.uber.org/zap"
 )
@@ -17,6 +18,11 @@ import (
 func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
+	// Load roles.
+	roles, err := rbac.LoadRoles("./roles.json")
+	if err != nil {
+		logger.Fatal("Failed to load roles", zap.Error(err))
+	}
 	var cfg config.AppConfiguration
 	// Read server settings from command-line flags into the config struct.
 	flag.IntVar(&cfg.Port, "port", 8080, "API server port")
@@ -35,15 +41,18 @@ func main() {
 	// Read JWT signing secret from command-line flags into the config struct.
 	flag.StringVar(&cfg.Jwt.Secret, "jwt-secret", "", "JWT secret")
 	flag.Parse()
+	// Establish database connection pool.
 	logger.Info("Starting the application", zap.Int("port", cfg.Port))
 	db, err := dbConn(cfg)
 	if err != nil {
 		logger.Fatal("Failed to establish database connection pool", zap.Error(err))
 	}
+	// Instantiate app layers.
 	repo := postgres.New(db)
 	service := service.New(repo, cfg, logger)
-	handler := httpHandler.New(service, cfg)
+	handler := httpHandler.New(service, cfg, roles)
+	// Start server.
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), handler.Routes()); err != nil {
-		panic(err)
+		logger.Fatal("Failed to start server", zap.Error(err))
 	}
 }

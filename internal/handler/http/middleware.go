@@ -10,6 +10,7 @@ import (
 
 	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/pkg/rbac"
 	"github.com/pascaldekloe/jwt"
 )
 
@@ -73,6 +74,14 @@ func (h *Handler) authenticate(next http.Handler) http.Handler {
 		}
 		// Add the user record to the request context and continue as normal.
 		r = h.contextSetUser(r, user)
+		// Check RBAC permission for authenticated user.
+		rbacAuthorizer := rbac.New(h.roles)
+		asset := strings.Split(strings.Trim(r.URL.Path, "/"), "/")[1]
+		action := rbacAuthorizer.ActionFromMethod(r.Method)
+		if !rbacAuthorizer.HasPermission(user, action, asset) {
+			h.notPermittedResponse(w, r)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

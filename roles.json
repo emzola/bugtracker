@@ -1,0 +1,18 @@
+{
+  "member": {
+    "create": ["issues", "tokens"],
+    "read": ["issues"],
+    "update": ["issues"]
+  },
+  "lead": {
+    "create": ["issues", "tokens"],
+    "read": ["issues", "projects", "issuesreport"],
+    "update": ["issues", "projects"]
+  },
+  "manager": {
+    "create": ["issues", "projects", "users", "tokens"],
+    "read": ["issues", "projects", "users", "issuesreport"],
+    "update": ["issues", "projects", "users"],
+    "delete": ["issues", "projects", "users"]
+  }
+}
