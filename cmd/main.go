@@ -2,9 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"net/http"
 	"os"
+	"sync"
 
 	"github.com/emzola/issuetracker/config"
 	httpHandler "github.com/emzola/issuetracker/internal/handler/http"
@@ -21,7 +20,7 @@ func main() {
 	// Load roles.
 	roles, err := rbac.LoadRoles("./roles.json")
 	if err != nil {
-		logger.Fatal("Failed to load roles", zap.Error(err))
+		logger.Fatal("failed to load roles", zap.Error(err))
 	}
 	var cfg config.AppConfiguration
 	// Read server settings from command-line flags into the config struct.
@@ -46,17 +45,19 @@ func main() {
 	flag.BoolVar(&cfg.Limiter.Enabled, "limiter-enabled", true, "Enable rate limiter")
 	flag.Parse()
 	// Establish database connection pool.
-	logger.Info("Starting the application", zap.Int("port", cfg.Port))
 	db, err := dbConn(cfg)
 	if err != nil {
-		logger.Fatal("Failed to establish database connection pool", zap.Error(err))
+		logger.Fatal("failed to establish database connection pool", zap.Error(err))
 	}
+	logger.Info("database connection pool established")
+	var wg sync.WaitGroup
 	// Instantiate app layers.
 	repo := postgres.New(db)
-	service := service.New(repo, cfg, logger)
+	service := service.New(repo, cfg, &wg, logger)
 	handler := httpHandler.New(service, cfg, roles)
 	// Start server.
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), handler.Routes()); err != nil {
-		logger.Fatal("Failed to start server", zap.Error(err))
+	err = serve(handler.Routes(), cfg, &wg, logger)
+	if err != nil {
+		logger.Fatal("failed to start server", zap.Error(err))
 	}
 }
