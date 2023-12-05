@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -109,4 +110,17 @@ func (h *Handler) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
 		next.ServeHTTP(w, r)
 	})
 	return h.requireAuthenticatedUser(fn)
+}
+
+// recoverPanic recovers from app-wide panics.
+func (h *Handler) recoverPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				w.Header().Set("Connection", "close")
+				h.serverErrorResponse(w, r, fmt.Errorf("%s", err))
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }
