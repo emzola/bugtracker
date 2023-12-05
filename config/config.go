@@ -21,4 +21,9 @@ type AppConfiguration struct {
 	Jwt struct {
 		Secret string
 	}
+	Limiter struct {
+		Rps     float64
+		Burst   int
+		Enabled bool
+	}
 }

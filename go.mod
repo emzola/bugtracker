@@ -16,6 +16,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
+	golang.org/x/time v0.5.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/mail.v2 v2.3.1 // indirect
 )

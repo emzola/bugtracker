@@ -89,3 +89,8 @@ func (h *Handler) alreadyActivatedResponse(w http.ResponseWriter, r *http.Reques
 	message := "your user account has already been activated"
 	h.errorResponse(w, r, http.StatusForbidden, message)
 }
+
+func (h *Handler) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request) {
+	message := "rate limit exceeded"
+	h.errorResponse(w, r, http.StatusTooManyRequests, message)
+}

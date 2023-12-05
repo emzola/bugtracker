@@ -12,6 +12,8 @@ func (h *Handler) Routes() http.Handler {
 	router.NotFound = http.HandlerFunc(h.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(h.methodNotAllowedResponse)
 
+	router.HandlerFunc(http.MethodGet, "/v1/health", h.healthCheck)
+
 	router.HandlerFunc(http.MethodGet, "/v1/projects", h.requireActivatedUser(h.getAllProjects))
 	router.HandlerFunc(http.MethodPost, "/v1/projects", h.requireActivatedUser(h.createProject))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:project_id", h.requireActivatedUser(h.getProject))
@@ -43,5 +45,5 @@ func (h *Handler) Routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", h.requireAuthenticatedUser(h.createActivationToken))
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", h.createAuthenticationToken)
 
-	return h.recoverPanic(h.authenticate(router))
+	return h.recoverPanic(h.rateLimit(h.authenticate(router)))
 }

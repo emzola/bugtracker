@@ -40,6 +40,10 @@ func main() {
 	flag.StringVar(&cfg.Smtp.Sender, "smtp-sender", "Issue Tracker <no-reply@github.com/emzola/issuetracker>", "SMTP sender")
 	// Read JWT signing secret from command-line flags into the config struct.
 	flag.StringVar(&cfg.Jwt.Secret, "jwt-secret", "", "JWT secret")
+	// Read Rate Limiter settings from command-line flags into the config struct.
+	flag.Float64Var(&cfg.Limiter.Rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.Limiter.Burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.Limiter.Enabled, "limiter-enabled", true, "Enable rate limiter")
 	flag.Parse()
 	// Establish database connection pool.
 	logger.Info("Starting the application", zap.Int("port", cfg.Port))
