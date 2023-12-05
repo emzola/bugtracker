@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/emzola/issuetracker/config"
@@ -43,6 +44,11 @@ func main() {
 	flag.Float64Var(&cfg.Limiter.Rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.Limiter.Burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.Limiter.Enabled, "limiter-enabled", true, "Enable rate limiter")
+	// Read CORS configuration from command-line flags into the config struct.
+	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(s string) error {
+		cfg.Cors.TrustedOrigins = strings.Fields(s)
+		return nil
+	})
 	flag.Parse()
 	// Establish database connection pool.
 	db, err := dbConn(cfg)

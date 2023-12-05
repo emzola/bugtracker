@@ -45,5 +45,5 @@ func (h *Handler) Routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", h.requireAuthenticatedUser(h.createActivationToken))
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", h.createAuthenticationToken)
 
-	return h.recoverPanic(h.rateLimit(h.authenticate(router)))
+	return h.recoverPanic(h.enableCORS(h.rateLimit(h.authenticate(router))))
 }

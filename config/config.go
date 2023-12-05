@@ -26,4 +26,7 @@ type AppConfiguration struct {
 		Burst   int
 		Enabled bool
 	}
+	Cors struct {
+		TrustedOrigins []string
+	}
 }
