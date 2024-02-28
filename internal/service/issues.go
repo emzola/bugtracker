@@ -19,7 +19,6 @@ type issueRepository interface {
 	DeleteIssue(ctx context.Context, id int64) error
 }
 
-// CreateIssue adds a new issue.
 func (s *Service) CreateIssue(ctx context.Context, title, description string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error) {
 	if priority == "" {
 		priority = "low"
@@ -83,7 +82,6 @@ func (s *Service) CreateIssue(ctx context.Context, title, description string, re
 	return issue, nil
 }
 
-// GetIssue retrieves an issue by id.
 func (s *Service) GetIssue(ctx context.Context, id int64) (*model.Issue, error) {
 	issue, err := s.repo.GetIssue(ctx, id)
 	if err != nil {
@@ -97,7 +95,6 @@ func (s *Service) GetIssue(ctx context.Context, id int64) (*model.Issue, error) 
 	return issue, nil
 }
 
-// GetAllIssues returns a paginated list of all issues. List can be filtered and sorted.
 func (s *Service) GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
@@ -117,7 +114,6 @@ func (s *Service) GetAllIssues(ctx context.Context, title, reportedDate string, 
 	return issues, metadata, nil
 }
 
-// UpdateIssue updates an issue's details.
 func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, status, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, user *model.User) (*model.Issue, error) {
 	issue, err := s.repo.GetIssue(ctx, id)
 	if err != nil {
@@ -214,7 +210,6 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 	return issue, nil
 }
 
-// DeleteIssue deletes an issue by id.
 func (s *Service) DeleteIssue(ctx context.Context, id int64) error {
 	err := s.repo.DeleteIssue(ctx, id)
 	if err != nil {

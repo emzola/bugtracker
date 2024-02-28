@@ -9,7 +9,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// dbConn configures a database connection pool.
 func dbConn(cfg config.AppConfiguration) (*sql.DB, error) {
 	db, err := sql.Open("pgx", cfg.Database.Dsn)
 	if err != nil {

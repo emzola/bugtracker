@@ -7,7 +7,6 @@ import (
 	"github.com/emzola/issuetracker/internal/model"
 )
 
-// GetIssuesReportStatus retrieves the count of issue statuses for a specific project record.
 func (r *Repository) GetIssuesStatusReport(ctx context.Context, projectID int64) ([]*model.IssuesStatus, error) {
 	query := `
 		SELECT status, COUNT(status)
@@ -42,7 +41,6 @@ func (r *Repository) GetIssuesStatusReport(ctx context.Context, projectID int64)
 	return statuses, nil
 }
 
-// GetIssuesAssigneeReport retrieves the count of issue assignees for a specific project record.
 func (r *Repository) GetIssuesAssigneeReport(ctx context.Context, projectID int64) ([]*model.IssuesAssignee, error) {
 	query := `
 		SELECT users.id, users.name, COUNT(users.id)
@@ -80,7 +78,6 @@ func (r *Repository) GetIssuesAssigneeReport(ctx context.Context, projectID int6
 	return assignees, nil
 }
 
-// GetIssuesReporterReport retrieves the count of issue reporters for a specific project record.
 func (r *Repository) GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error) {
 	query := `
 		SELECT users.id, users.name, COUNT(users.id)
@@ -118,7 +115,6 @@ func (r *Repository) GetIssuesReporterReport(ctx context.Context, projectID int6
 	return reporters, nil
 }
 
-// GetIssuesPriorityLevelReport retrieves the count of issue priority levels for a specific project record.
 func (r *Repository) GetIssuesPriorityLevelReport(ctx context.Context, projectID int64) ([]*model.IssuesPriority, error) {
 	query := `
 		SELECT priority, COUNT(priority)
@@ -153,7 +149,6 @@ func (r *Repository) GetIssuesPriorityLevelReport(ctx context.Context, projectID
 	return priorities, nil
 }
 
-// GetIssuesPriorityLevelReport retrieves the count of issue priority levels for a specific project record.
 func (r *Repository) GetIssuesTargetDateReport(ctx context.Context, projectID int64) ([]*model.IssuesTargetDate, error) {
 	query := `
 		SELECT title, target_resolution_date

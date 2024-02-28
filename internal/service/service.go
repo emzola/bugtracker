@@ -15,7 +15,6 @@ type RepositoryLayer interface {
 	issuesReportRepository
 }
 
-// Controller defines a new project service controller.
 type Service struct {
 	repo   RepositoryLayer
 	Config config.AppConfiguration
@@ -23,7 +22,6 @@ type Service struct {
 	Logger *zap.Logger
 }
 
-// New creates a project service controller.
 func New(repo RepositoryLayer, cfg config.AppConfiguration, wg *sync.WaitGroup, logger *zap.Logger) *Service {
 	return &Service{repo, cfg, wg, logger}
 }

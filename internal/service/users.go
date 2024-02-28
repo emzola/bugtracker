@@ -24,7 +24,6 @@ type userRepository interface {
 	GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters) ([]*model.Project, model.Metadata, error)
 }
 
-// CreateUser adds a new user.
 func (s *Service) CreateUser(ctx context.Context, name, email, password, role, createdBy, modifiedBy string) (*model.User, error) {
 	user := &model.User{
 		Name:       name,
@@ -66,7 +65,6 @@ func (s *Service) CreateUser(ctx context.Context, name, email, password, role, c
 	return user, nil
 }
 
-// GetUserByEmail retrieves a user by email.
 func (s *Service) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	v := validator.New()
 	if model.ValidateEmail(v, email); !v.Valid() {
@@ -85,7 +83,6 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (*model.User
 	return user, nil
 }
 
-// GetUserByID retrieves a user by ID.
 func (s *Service) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
 	user, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {
@@ -99,7 +96,6 @@ func (s *Service) GetUserByID(ctx context.Context, id int64) (*model.User, error
 	return user, nil
 }
 
-// GetAllUsers returns a paginated list of all users. List can be filtered and sorted.
 func (s *Service) GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
@@ -111,7 +107,6 @@ func (s *Service) GetAllUsers(ctx context.Context, name, email, role string, fil
 	return users, metadata, nil
 }
 
-// GetUserForToken retrieves a user whose records matches a token.
 func (s *Service) GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error) {
 	v := validator.New()
 	if model.ValidateTokenPlaintext(v, tokenPlaintext); !v.Valid() {
@@ -130,7 +125,6 @@ func (s *Service) GetUserForToken(ctx context.Context, tokenScope, tokenPlaintex
 	return user, nil
 }
 
-// ActivateUser activates a user.
 func (s *Service) ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error {
 	// Update user.
 	user.Activated = true
@@ -152,7 +146,6 @@ func (s *Service) ActivateUser(ctx context.Context, user *model.User, modifiedBy
 	return nil
 }
 
-// UpdateUser updates a user.
 func (s *Service) UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedBy string) (*model.User, error) {
 	user, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {
@@ -192,7 +185,6 @@ func (s *Service) UpdateUser(ctx context.Context, id int64, name, email, role *s
 	return user, nil
 }
 
-// DeleteUser deletes a user.
 func (s *Service) DeleteUser(ctx context.Context, id int64) error {
 	err := s.repo.DeleteUser(ctx, id)
 	if err != nil {
@@ -253,7 +245,6 @@ func (s *Service) AssignUserToProject(ctx context.Context, userID, projectID int
 	return nil
 }
 
-// GetAllProjectsForUser retrieves all projects for a user
 func (s *Service) GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)

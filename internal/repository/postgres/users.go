@@ -12,7 +12,6 @@ import (
 	"github.com/emzola/issuetracker/internal/repository"
 )
 
-// CreateUser adds a new user record.
 func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 	query := `
 		INSERT INTO users (name, email, password_hash, activated, role, created_by, modified_by)
@@ -33,7 +32,6 @@ func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-// GetUserByEmail retrieves a user record by email.
 func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	query := `
 		SELECT id, name, email, password_hash, activated, role, created_on, created_by, modified_on, modified_by, version
@@ -66,7 +64,6 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*model.U
 	return &user, nil
 }
 
-// GetUserByID retrieves a user record by id.
 func (r *Repository) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
 	query := `
 		SELECT id, name, email, password_hash, activated, role, created_on, created_by, modified_on, modified_by, version
@@ -99,7 +96,6 @@ func (r *Repository) GetUserByID(ctx context.Context, id int64) (*model.User, er
 	return &user, nil
 }
 
-// GetAllUsers returns a paginated list of all users. List can be filtered and sorted.
 func (r *Repository) GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters) ([]*model.User, model.Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), id, name, email, password_hash, activated, role, created_on, created_by, modified_on, modified_by, version
@@ -150,7 +146,6 @@ func (r *Repository) GetAllUsers(ctx context.Context, name, email, role string, 
 	return users, metadata, nil
 }
 
-// UpdateUser updates a user's record.
 func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
 	query := `
 		UPDATE users
@@ -174,7 +169,6 @@ func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-// GetUserForToken retrieves a user record from the tokens table.
 func (r *Repository) GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 	query := `
@@ -213,7 +207,6 @@ func (r *Repository) GetUserForToken(ctx context.Context, tokenScope, tokenPlain
 	return &user, nil
 }
 
-// DeleteUser removes a user record by its id.
 func (r *Repository) DeleteUser(ctx context.Context, id int64) error {
 	if id < 1 {
 		return repository.ErrNotFound
@@ -240,7 +233,6 @@ func (r *Repository) DeleteUser(ctx context.Context, id int64) error {
 	return nil
 }
 
-// AssignUserToProject assigns a user record to a project.
 func (r *Repository) AssignUserToProject(ctx context.Context, userID, projectID int64) error {
 	query := `
 		INSERT INTO projects_users 

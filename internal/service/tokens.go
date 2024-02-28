@@ -17,7 +17,6 @@ type tokenRepository interface {
 	DeleteAllTokensForUser(ctx context.Context, scope string, userID int64) error
 }
 
-// CreateActivationToken creates a new activation token and emails it to user.
 func (s *Service) CreateActivationToken(ctx context.Context, user *model.User) error {
 	if user.Activated {
 		return ErrActivated
@@ -35,7 +34,6 @@ func (s *Service) CreateActivationToken(ctx context.Context, user *model.User) e
 	return nil
 }
 
-// CreateAuthenticationToken creates a new authentication token.
 func (s *Service) CreateAuthenticationToken(ctx context.Context, email, password string) ([]byte, error) {
 	v := validator.New()
 	model.ValidateEmail(v, email)

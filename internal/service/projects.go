@@ -21,7 +21,6 @@ type projectRepository interface {
 	GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error)
 }
 
-// CreateProject adds a new project.
 func (s *Service) CreateProject(ctx context.Context, name, description string, assignedTo *int64, startDate, targetEndDate, createdBy, modifiedBy string) (*model.Project, error) {
 	project := &model.Project{
 		Name:        name,
@@ -90,7 +89,6 @@ func (s *Service) CreateProject(ctx context.Context, name, description string, a
 	return project, nil
 }
 
-// GetProject retrieves a project by id.
 func (s *Service) GetProject(ctx context.Context, id int64) (*model.Project, error) {
 	project, err := s.repo.GetProject(ctx, id)
 	if err != nil {
@@ -104,7 +102,6 @@ func (s *Service) GetProject(ctx context.Context, id int64) (*model.Project, err
 	return project, nil
 }
 
-// GetAllProjects returns a paginated list of all projects. List can be filtered and sorted.
 func (s *Service) GetAllProjects(ctx context.Context, name string, assignedTo int64, startDate, targetEndDate, actualEndDate, createdBy string, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
@@ -136,7 +133,6 @@ func (s *Service) GetAllProjects(ctx context.Context, name string, assignedTo in
 	return projects, metadata, nil
 }
 
-// UpdateProject updates a project's details.
 func (s *Service) UpdateProject(ctx context.Context, id int64, name, description *string, assignedTo *int64, startDate, targetEndDate, actualEndDate *string, user *model.User) (*model.Project, error) {
 	project, err := s.repo.GetProject(ctx, id)
 	if err != nil {
@@ -225,7 +221,6 @@ func (s *Service) UpdateProject(ctx context.Context, id int64, name, description
 	return project, nil
 }
 
-// DeleteProject deletes a project by id.
 func (s *Service) DeleteProject(ctx context.Context, id int64) error {
 	err := s.repo.DeleteProject(ctx, id)
 	if err != nil {
@@ -239,7 +234,6 @@ func (s *Service) DeleteProject(ctx context.Context, id int64) error {
 	return nil
 }
 
-// GetProjectUsers returns a paginated list of all project users. List can be filtered and sorted.
 func (s *Service) GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
@@ -251,7 +245,6 @@ func (s *Service) GetProjectUsers(ctx context.Context, projectID int64, role str
 	return users, metadata, nil
 }
 
-// GetProjectUser returns a user for a specific project.
 func (s *Service) GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error) {
 	user, err := s.repo.GetProjectUser(ctx, projectID, userID)
 	if err != nil {

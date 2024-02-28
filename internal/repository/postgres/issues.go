@@ -11,7 +11,6 @@ import (
 	"github.com/emzola/issuetracker/internal/repository"
 )
 
-// CreateIssue adds a new issue record.
 func (r *Repository) CreateIssue(ctx context.Context, issue *model.Issue) error {
 	query := `
 		INSERT INTO issues (title, description, reporter_id, project_id, assigned_to, status, priority, target_resolution_date, created_by, modified_by)
@@ -30,7 +29,6 @@ func (r *Repository) CreateIssue(ctx context.Context, issue *model.Issue) error 
 	return nil
 }
 
-// GetIssue retrieves an issue record by its id.
 func (r *Repository) GetIssue(ctx context.Context, id int64) (*model.Issue, error) {
 	if id < 1 {
 		return nil, repository.ErrNotFound
@@ -73,7 +71,6 @@ func (r *Repository) GetIssue(ctx context.Context, id int64) (*model.Issue, erro
 	return &issue, nil
 }
 
-// GetAllIssues returns a paginated list of all projects. List can be filtered and sorted.
 func (r *Repository) GetAllIssues(ctx context.Context, title string, reportedDate time.Time, projectID, assignedTo int64, status, priority string, filters model.Filters) ([]*model.Issue, model.Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), id, title, description, reporter_id, reported_date, project_id, assigned_to, status, priority, target_resolution_date, progress, actual_resolution_date, resolution_summary, created_on, created_by, modified_on, modified_by, version
@@ -134,7 +131,6 @@ func (r *Repository) GetAllIssues(ctx context.Context, title string, reportedDat
 	return issues, metadata, nil
 }
 
-// UpdateIssue updates an issue record.
 func (r *Repository) UpdateIssue(ctx context.Context, issue *model.Issue) error {
 	query := `
 		UPDATE issues
@@ -156,7 +152,6 @@ func (r *Repository) UpdateIssue(ctx context.Context, issue *model.Issue) error 
 	return nil
 }
 
-// DeleteIssue removes an issue record by its id.
 func (r *Repository) DeleteIssue(ctx context.Context, id int64) error {
 	if id < 1 {
 		return repository.ErrNotFound

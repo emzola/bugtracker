@@ -11,8 +11,6 @@ import (
 	"github.com/emzola/issuetracker/internal/model"
 )
 
-// CreateToken is a shortcut method which creates a new token struct
-// and inserts the data in the tokens table.
 func (r *Repository) CreateToken(ctx context.Context, userID int64, ttl time.Duration, scope string) (*model.Token, error) {
 	token, err := generateToken(userID, ttl, scope)
 	if err != nil {
@@ -25,7 +23,6 @@ func (r *Repository) CreateToken(ctx context.Context, userID int64, ttl time.Dur
 	return token, nil
 }
 
-// generateToken generates a new token instance containing the userID, expiry and scope information.
 func generateToken(userID int64, ttl time.Duration, scope string) (*model.Token, error) {
 	token := &model.Token{
 		UserID: userID,
@@ -43,7 +40,6 @@ func generateToken(userID int64, ttl time.Duration, scope string) (*model.Token,
 	return token, nil
 }
 
-// InsertToken inserts a token record into the tokens table.
 func (r *Repository) InsertToken(ctx context.Context, token *model.Token) error {
 	query := `
 		INSERT INTO tokens(hash, user_id, expiry, scope)
@@ -61,7 +57,6 @@ func (r *Repository) InsertToken(ctx context.Context, token *model.Token) error 
 	return nil
 }
 
-// DeleteAllTokensForUser deletes all tokens for a specific user and scope.
 func (r *Repository) DeleteAllTokensForUser(ctx context.Context, scope string, userID int64) error {
 	query := `
 		DELETE FROM tokens

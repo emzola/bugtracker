@@ -11,7 +11,6 @@ import (
 	"github.com/emzola/issuetracker/internal/repository"
 )
 
-// CreateProject adds a new project record.
 func (r *Repository) CreateProject(ctx context.Context, project *model.Project) error {
 	query := `
 		INSERT INTO projects (name, description, assigned_to, start_date, target_end_date, created_by, modified_by)
@@ -32,7 +31,6 @@ func (r *Repository) CreateProject(ctx context.Context, project *model.Project) 
 	return nil
 }
 
-// GetProject retrieves a project record by its id.
 func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, error) {
 	if id < 1 {
 		return nil, repository.ErrNotFound
@@ -69,7 +67,6 @@ func (r *Repository) GetProject(ctx context.Context, id int64) (*model.Project, 
 	return &project, nil
 }
 
-// GetAllProjects returns a paginated list of all projects. List can be filtered and sorted.
 func (r *Repository) GetAllProjects(ctx context.Context, name string, assignedTo int64, startDate, targetEndDate, actualEndDate time.Time, createdBy string, filters model.Filters) ([]*model.Project, model.Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), id, name, description, assigned_to, start_date, target_end_date, actual_end_date, created_on, modified_on, created_by, modified_by, version
@@ -124,7 +121,6 @@ func (r *Repository) GetAllProjects(ctx context.Context, name string, assignedTo
 	return projects, metadata, nil
 }
 
-// UpdateProject updates a project's record.
 func (r *Repository) UpdateProject(ctx context.Context, project *model.Project) error {
 	query := `
 		UPDATE projects
@@ -146,7 +142,6 @@ func (r *Repository) UpdateProject(ctx context.Context, project *model.Project) 
 	return nil
 }
 
-// DeleteProject removes a project record by its id.
 func (r *Repository) DeleteProject(ctx context.Context, id int64) error {
 	if id < 1 {
 		return repository.ErrNotFound
@@ -173,7 +168,6 @@ func (r *Repository) DeleteProject(ctx context.Context, id int64) error {
 	return nil
 }
 
-// GetProjectUsers returns a paginated list of all users for a specific project.
 func (r *Repository) GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters) ([]*model.User, model.Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), users.id, users.name, users.email, users.password_hash, users.activated, users.role, users.created_on, users.created_by, users.modified_on, users.modified_by, users.version
@@ -225,7 +219,6 @@ func (r *Repository) GetProjectUsers(ctx context.Context, projectID int64, role 
 	return users, metadata, nil
 }
 
-// GetProjectUser returns a user record for a specific project.
 func (r *Repository) GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error) {
 	query := `
 		SELECT users.id, users.name, users.email, users.password_hash, users.activated, users.role, users.created_on, users.created_by, users.modified_on, users.modified_by, users.version
@@ -261,7 +254,6 @@ func (r *Repository) GetProjectUser(ctx context.Context, projectID, userID int64
 	return &user, nil
 }
 
-// GetAllProjectsForUser returns a paginated list of all projects for a specific user.
 func (r *Repository) GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters) ([]*model.Project, model.Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), projects.id, projects.name, projects.description, projects.start_date, projects.target_end_date, projects.actual_end_date, projects.created_on, projects.modified_on, projects.created_by, projects.modified_by, projects.version
