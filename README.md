@@ -1,6 +1,6 @@
 # Issues Tracker API Backend
 
-Welcome to the Issues Tracker API Backend repository! This API is designed to help you manage and track issues in your organization. It comes with role-based access control, allowing administrators, managers, and employees to have different levels of access and permissions.
+The Issues Tracker API Backend is designed to help you manage and track issues in your organization. It comes with role-based access control, allowing administrators, managers, and employees to have different levels of access and permissions.
 
 ## Table of Contents
 - [Features](#features)
