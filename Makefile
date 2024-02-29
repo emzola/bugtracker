@@ -39,3 +39,29 @@ db/migrations/new:
 db/migrations/up: confirm
 	@echo 'Running up migrations...'
 	@migrate -path ./migrations -database ${DSN} up
+
+# ==================================================================================== #
+# API DOCUMENTATION
+# ==================================================================================== #
+## gen/doc: Generate OpenAPI specification
+.PHONY: gen/doc
+gen/doc:
+	@echo 'Generating OpenAPI specification...'
+	swag init --parseInternal=true --generatedTime=true -g=cmd/main.go --parseDependency=true --output=docs
+
+# ==================================================================================== #
+# QUALITY CONTROL
+# ==================================================================================== #
+## audit: tidy dependencies and format, vet and test all code
+.PHONY: audit
+audit:
+	@echo 'Tidying and verifying module dependencies...'
+	go mod tidy
+	go mod verify
+	@echo 'Formatting code...'
+	go fmt ./...
+	@echo 'Vetting code...'
+	go vet ./...
+	staticcheck ./...
+	@echo 'Running tests...'
+	go test -vet=off ./...

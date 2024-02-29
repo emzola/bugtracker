@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func (h *Handler) Routes() http.Handler {
@@ -44,6 +45,8 @@ func (h *Handler) Routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", h.requireAuthenticatedUser(h.createActivationToken))
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", h.createAuthenticationToken)
+
+	router.HandlerFunc(http.MethodGet, "/docs/*any", httpSwagger.WrapHandler)
 
 	return h.recoverPanic(h.enableCORS(h.rateLimit(h.authenticate(router))))
 }

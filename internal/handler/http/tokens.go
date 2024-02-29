@@ -15,18 +15,28 @@ type tokenService interface {
 	CreateAuthenticationToken(ctx context.Context, email, password string) ([]byte, error)
 }
 
+// CreateActivationToken godoc
+// @Summary Create a new activation token
+// @Description This endpoint creates a new activation token
+// @Tags tokens
+// @Accept  json
+// @Produce json
+// @Param payload body createActivationTokenPayload true "Request payload"
+// @Success 200
+// @Failure 400
+// @Failure 422
+// @Failure 500
+// @Router /v1/tokens/activation [post]
 func (h *Handler) createActivationToken(w http.ResponseWriter, r *http.Request) {
-	var requestBody struct {
-		Email string `json:"email"`
-	}
-	err := h.decodeJSON(w, r, &requestBody)
+	var requestPayload createActivationTokenPayload
+	err := h.decodeJSON(w, r, &requestPayload)
 	if err != nil {
 		h.badRequestResponse(w, r, err)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	user, err := h.service.GetUserByEmail(ctx, requestBody.Email)
+	user, err := h.service.GetUserByEmail(ctx, requestPayload.Email)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -56,19 +66,29 @@ func (h *Handler) createActivationToken(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// CreateAuthenticationToken godoc
+// @Summary Create JWT authentication token
+// @Description This endpoint creates JWT token
+// @Tags tokens
+// @Accept  json
+// @Produce json
+// @Param payload body createAuthenticationTokenPayload true "Request payload"
+// @Success 201 {object} model.Token
+// @Failure 400
+// @Failure 401
+// @Failure 422
+// @Failure 500
+// @Router /v1/tokens/authentication [post]
 func (h *Handler) createAuthenticationToken(w http.ResponseWriter, r *http.Request) {
-	var requestBody struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-	err := h.decodeJSON(w, r, &requestBody)
+	var requestPayload createAuthenticationTokenPayload
+	err := h.decodeJSON(w, r, &requestPayload)
 	if err != nil {
 		h.badRequestResponse(w, r, err)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	jwtBytes, err := h.service.CreateAuthenticationToken(ctx, requestBody.Email, requestBody.Password)
+	jwtBytes, err := h.service.CreateAuthenticationToken(ctx, requestPayload.Email, requestPayload.Password)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):

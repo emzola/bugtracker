@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/emzola/issuetracker/config"
+	_ "github.com/emzola/issuetracker/docs"
 	httpHandler "github.com/emzola/issuetracker/internal/handler/http"
 	"github.com/emzola/issuetracker/internal/repository/postgres"
 	"github.com/emzola/issuetracker/internal/service"
@@ -15,6 +16,16 @@ import (
 	"go.uber.org/zap"
 )
 
+// @title  Issue Tracker API
+// @version 1.0.0
+// @description This is an API service for an issue tracker.
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.email emma.idika@yahoo.com
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host https://issuetracker-api-dev.fl0.io
+// @BasePath /
 func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
@@ -41,8 +52,8 @@ func main() {
 	// Read JWT signing secret from command-line flags into the config struct.
 	flag.StringVar(&cfg.Jwt.Secret, "jwt-secret", "", "JWT secret")
 	// Read Rate Limiter settings from command-line flags into the config struct.
-	flag.Float64Var(&cfg.Limiter.Rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
-	flag.IntVar(&cfg.Limiter.Burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.Float64Var(&cfg.Limiter.Rps, "limiter-rps", 4, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.Limiter.Burst, "limiter-burst", 8, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.Limiter.Enabled, "limiter-enabled", true, "Enable rate limiter")
 	// Read CORS configuration from command-line flags into the config struct.
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(s string) error {

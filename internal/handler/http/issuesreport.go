@@ -18,16 +18,26 @@ type issuesReportService interface {
 	GetIssuesTargetDateReport(ctx context.Context, projectID int64) ([]*model.IssuesTargetDate, error)
 }
 
+// GetIssuesStatusReport godoc
+// @Summary Get report of issue status for a project
+// @Description This endpoint gets report of issue status for a project
+// @Tags issuesreport
+// @Produce json
+// @Param token header string true "Bearer token"
+// @Param project_id query string true "Query string param for project_id"
+// @Success 200 {array} model.IssuesStatus
+// @Failure 500
+// @Router /v1/issuesreport/status [get]
 func (h *Handler) getIssuesStatusReport(w http.ResponseWriter, r *http.Request) {
-	var requestQuery struct {
+	var queryParams struct {
 		ProjectID int64
 	}
 	v := validator.New()
 	qs := r.URL.Query()
-	requestQuery.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
+	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	statuses, err := h.service.GetIssuesStatusReport(ctx, requestQuery.ProjectID)
+	statuses, err := h.service.GetIssuesStatusReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -43,16 +53,26 @@ func (h *Handler) getIssuesStatusReport(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// GetIssuesAssigneeReport godoc
+// @Summary Get report of issue assignees for a project
+// @Description This endpoint gets report of issue assignees for a project
+// @Tags issuesreport
+// @Produce json
+// @Param token header string true "Bearer token"
+// @Param project_id query string true "Query string param for project_id"
+// @Success 200 {array} model.IssuesAssignee
+// @Failure 500
+// @Router /v1/issuesreport/assignee [get]
 func (h *Handler) getIssuesAssigneeReport(w http.ResponseWriter, r *http.Request) {
-	var requestQuery struct {
+	var queryParams struct {
 		ProjectID int64
 	}
 	v := validator.New()
 	qs := r.URL.Query()
-	requestQuery.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
+	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	assignees, err := h.service.GetIssuesAssigneeReport(ctx, requestQuery.ProjectID)
+	assignees, err := h.service.GetIssuesAssigneeReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -68,16 +88,26 @@ func (h *Handler) getIssuesAssigneeReport(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// GetIssuesReporterReport godoc
+// @Summary Get report of issues reporter for a project
+// @Description This endpoint gets report of issues reporter for a project
+// @Tags issuesreport
+// @Produce json
+// @Param token header string true "Bearer token"
+// @Param project_id query string true "Query string param for project_id"
+// @Success 200 {array} model.IssuesReporter
+// @Failure 500
+// @Router /v1/issuesreport/reporter [get]
 func (h *Handler) getIssuesReporterReport(w http.ResponseWriter, r *http.Request) {
-	var requestQuery struct {
+	var queryParams struct {
 		ProjectID int64
 	}
 	v := validator.New()
 	qs := r.URL.Query()
-	requestQuery.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
+	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	reporters, err := h.service.GetIssuesReporterReport(ctx, requestQuery.ProjectID)
+	reporters, err := h.service.GetIssuesReporterReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -93,16 +123,26 @@ func (h *Handler) getIssuesReporterReport(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// GetIssuesPriorityLevelReport godoc
+// @Summary Get report of issues priority level for a project
+// @Description This endpoint gets report of issues priority level for a project
+// @Tags issuesreport
+// @Produce json
+// @Param token header string true "Bearer token"
+// @Param project_id query string true "Query string param for project_id"
+// @Success 200 {array} model.IssuesPriority
+// @Failure 500
+// @Router /v1/issuesreport/priority [get]
 func (h *Handler) getIssuesPriorityLevelReport(w http.ResponseWriter, r *http.Request) {
-	var requestQuery struct {
+	var queryParams struct {
 		ProjectID int64
 	}
 	v := validator.New()
 	qs := r.URL.Query()
-	requestQuery.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
+	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	priorityLevels, err := h.service.GetIssuesPriorityLevelReport(ctx, requestQuery.ProjectID)
+	priorityLevels, err := h.service.GetIssuesPriorityLevelReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -118,16 +158,26 @@ func (h *Handler) getIssuesPriorityLevelReport(w http.ResponseWriter, r *http.Re
 	}
 }
 
+// GetIssuesTargetDateReport godoc
+// @Summary Get report of issues target date for a project
+// @Description This endpoint gets report of issue target date for a project
+// @Tags issuesreport
+// @Produce json
+// @Param token header string true "Bearer token"
+// @Param project_id query string true "Query string param for project_id"
+// @Success 200 {array} model.IssuesTargetDate
+// @Failure 500
+// @Router /v1/issuesreport/date [get]
 func (h *Handler) getIssuesTargetDateReport(w http.ResponseWriter, r *http.Request) {
-	var requestQuery struct {
+	var queryParams struct {
 		ProjectID int64
 	}
 	v := validator.New()
 	qs := r.URL.Query()
-	requestQuery.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
+	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	targetDates, err := h.service.GetIssuesTargetDateReport(ctx, requestQuery.ProjectID)
+	targetDates, err := h.service.GetIssuesTargetDateReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):

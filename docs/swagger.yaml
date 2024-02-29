@@ -1,0 +1,1159 @@
+basePath: /
+definitions:
+  github_com_emzola_issuetracker_internal_model.Issue:
+    properties:
+      actual_resolution_date:
+        type: string
+      assigned_to:
+        type: integer
+      created_by:
+        type: string
+      created_on:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      modified_by:
+        type: string
+      modified_on:
+        type: string
+      priority:
+        type: string
+      progress:
+        type: string
+      project_id:
+        type: integer
+      reported_date:
+        type: string
+      reporter_id:
+        type: integer
+      resolution_summary:
+        type: string
+      status:
+        type: string
+      target_resolution_date:
+        type: string
+      title:
+        type: string
+    type: object
+  github_com_emzola_issuetracker_internal_model.IssuesAssignee:
+    properties:
+      assignee_id:
+        type: integer
+      assignee_name:
+        type: string
+      issues_assigned:
+        type: integer
+    type: object
+  github_com_emzola_issuetracker_internal_model.IssuesPriority:
+    properties:
+      issue_priority:
+        type: string
+      issues_count:
+        type: integer
+    type: object
+  github_com_emzola_issuetracker_internal_model.IssuesReporter:
+    properties:
+      issues_reported:
+        type: integer
+      reporter_id:
+        type: integer
+      reporter_name:
+        type: string
+    type: object
+  github_com_emzola_issuetracker_internal_model.IssuesStatus:
+    properties:
+      issue_status:
+        type: string
+      issues_count:
+        type: integer
+    type: object
+  github_com_emzola_issuetracker_internal_model.IssuesTargetDate:
+    properties:
+      issue_title:
+        type: string
+      target_resolution_date:
+        type: string
+    type: object
+  github_com_emzola_issuetracker_internal_model.Project:
+    properties:
+      actual_end_date:
+        type: string
+      assigned_to:
+        type: integer
+      created_by:
+        type: string
+      created_on:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      modified_by:
+        type: string
+      modified_on:
+        type: string
+      name:
+        type: string
+      start_date:
+        type: string
+      target_end_date:
+        type: string
+    type: object
+  github_com_emzola_issuetracker_internal_model.Token:
+    properties:
+      token:
+        type: string
+    type: object
+  github_com_emzola_issuetracker_internal_model.User:
+    properties:
+      activated:
+        type: boolean
+      created_by:
+        type: string
+      created_on:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      modified_by:
+        type: string
+      modified_on:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+  internal_handler_http.activateUserPayload:
+    properties:
+      token:
+        type: string
+    type: object
+  internal_handler_http.assignUserToProjectPayload:
+    properties:
+      project_id:
+        type: integer
+    type: object
+  internal_handler_http.createActivationTokenPayload:
+    properties:
+      email:
+        type: string
+    type: object
+  internal_handler_http.createAuthenticationTokenPayload:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  internal_handler_http.createIssuePayload:
+    properties:
+      assigned_to:
+        type: integer
+      description:
+        type: string
+      priority:
+        type: string
+      project_id:
+        type: integer
+      target_resolution_date:
+        type: string
+      title:
+        type: string
+    type: object
+  internal_handler_http.createProjectPayload:
+    properties:
+      assigned_to:
+        type: integer
+      description:
+        type: string
+      name:
+        type: string
+      start_date:
+        type: string
+      target_end_date:
+        type: string
+    type: object
+  internal_handler_http.createUserPayload:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+    type: object
+  internal_handler_http.updateIsssuePayload:
+    properties:
+      actual_resolution_date:
+        type: string
+      assigned_to:
+        type: integer
+      description:
+        type: string
+      priority:
+        type: string
+      progress:
+        type: string
+      resolution_summary:
+        type: string
+      status:
+        type: string
+      target_resolution_date:
+        type: string
+      title:
+        type: string
+    type: object
+  internal_handler_http.updateProjectPayload:
+    properties:
+      actual_end_date:
+        type: string
+      assigned_to:
+        type: integer
+      description:
+        type: string
+      name:
+        type: string
+      start_date:
+        type: string
+      target_end_date:
+        type: string
+    type: object
+  internal_handler_http.updateUserPayload:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+host: https://issuetracker-api-dev.fl0.io
+info:
+  contact:
+    email: emma.idika@yahoo.com
+    name: API Support
+  description: This is an API service for an issue tracker.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Issue Tracker API
+  version: 1.0.0
+paths:
+  /v1/issues:
+    get:
+      description: This endpoint gets all issues
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for title
+        in: query
+        name: title
+        type: string
+      - description: Query string param for reported_date
+        in: query
+        name: reported_date
+        type: string
+      - description: Query string param for project_id
+        in: query
+        name: project_id
+        type: string
+      - description: Query string param for assigned_to
+        in: query
+        name: assigned_to
+        type: string
+      - description: Query string param for status
+        in: query
+        name: status
+        type: string
+      - description: Query string param for priority
+        in: query
+        name: priority
+        type: string
+      - description: Query string param for pagination (min 1)
+        in: query
+        name: page
+        type: string
+      - description: Query string param for pagination (max 100)
+        in: query
+        name: page_size
+        type: string
+      - description: 'Sort by asc or desc order. Asc: id, title, reported_date, project_id,
+          assigned_to, status, priority | Desc: -id, -title, -reported_date, -project_id,
+          -assigned_to, -status, -priority'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Issue'
+            type: array
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Get all issues
+      tags:
+      - issues
+    post:
+      consumes:
+      - application/json
+      description: Create a new issue with the request payload
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.createIssuePayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Issue'
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Create a new issue
+      tags:
+      - issues
+  /v1/issues/{issue_id}:
+    delete:
+      description: This endpoint deletes an issue
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: ID of issue to delete
+        in: path
+        name: issue_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Delete an issue
+      tags:
+      - issues
+    get:
+      description: This endpoint gets an issue by ID
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: ID of issue to get
+        in: path
+        name: issue_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Issue'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Get issue by ID
+      tags:
+      - issues
+    patch:
+      consumes:
+      - application/json
+      description: This endpoint updates an issue
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.updateIsssuePayload'
+      - description: ID of issue to update
+        in: path
+        name: issue_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Issue'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Update an issue
+      tags:
+      - issues
+  /v1/issuesreport/assignee:
+    get:
+      description: This endpoint gets report of issue assignees for a project
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for project_id
+        in: query
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.IssuesAssignee'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Get report of issue assignees for a project
+      tags:
+      - issuesreport
+  /v1/issuesreport/date:
+    get:
+      description: This endpoint gets report of issue target date for a project
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for project_id
+        in: query
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.IssuesTargetDate'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Get report of issues target date for a project
+      tags:
+      - issuesreport
+  /v1/issuesreport/priority:
+    get:
+      description: This endpoint gets report of issues priority level for a project
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for project_id
+        in: query
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.IssuesPriority'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Get report of issues priority level for a project
+      tags:
+      - issuesreport
+  /v1/issuesreport/reporter:
+    get:
+      description: This endpoint gets report of issues reporter for a project
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for project_id
+        in: query
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.IssuesReporter'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Get report of issues reporter for a project
+      tags:
+      - issuesreport
+  /v1/issuesreport/status:
+    get:
+      description: This endpoint gets report of issue status for a project
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for project_id
+        in: query
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.IssuesStatus'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Get report of issue status for a project
+      tags:
+      - issuesreport
+  /v1/projects:
+    get:
+      description: This endpoint gets all projects
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for name
+        in: query
+        name: name
+        type: string
+      - description: Query string param for assigned_to
+        in: query
+        name: assigned_to
+        type: string
+      - description: Query string param for start_Date
+        in: query
+        name: start_date
+        type: string
+      - description: Query string param for target_end_date
+        in: query
+        name: target_end_date
+        type: string
+      - description: Query string param for actual_end_date
+        in: query
+        name: actual_end_date
+        type: string
+      - description: Query string param for created_by
+        in: query
+        name: created_by
+        type: string
+      - description: Query string param for pagination (min 1)
+        in: query
+        name: page
+        type: string
+      - description: Query string param for pagination (max 100)
+        in: query
+        name: page_size
+        type: string
+      - description: 'Sort by asc or desc order. Asc: id, name, assigned_to, start_date,
+          target_end_date, actual_end_date, created_by | Desc: -id, -name, -assigned_to,
+          -start_date, -target_end_date, -actual_end_date, -created_by'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Project'
+            type: array
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Get all projects
+      tags:
+      - projects
+    post:
+      consumes:
+      - application/json
+      description: Create a new project with the request payload
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.createProjectPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Project'
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Create a new project
+      tags:
+      - projects
+  /v1/projects/{project_id}:
+    delete:
+      description: This endpoint deletes a project
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: ID of project to delete
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Delete a project
+      tags:
+      - projects
+    get:
+      description: This endpoint gets a project by ID
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: ID of project to get
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Project'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Get project by ID
+      tags:
+      - projects
+    patch:
+      consumes:
+      - application/json
+      description: This endpoint updates a project
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.updateProjectPayload'
+      - description: ID of project to update
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Project'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Update a project
+      tags:
+      - projects
+  /v1/projects/{project_id}/users:
+    get:
+      description: This endpoint gets all project users
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: ID of project to get users
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Query string param for role
+        in: query
+        name: role
+        type: string
+      - description: Query string param for pagination (min 1)
+        in: query
+        name: page
+        type: string
+      - description: Query string param for pagination (max 100)
+        in: query
+        name: page_size
+        type: string
+      - description: 'Sort by asc or desc order. Asc: id | Desc: -id'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.User'
+            type: array
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Get project users
+      tags:
+      - projects
+  /v1/tokens/activation:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint creates a new activation token
+      parameters:
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.createActivationTokenPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Create a new activation token
+      tags:
+      - tokens
+  /v1/tokens/authentication:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint creates JWT token
+      parameters:
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.createAuthenticationTokenPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.Token'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Create JWT authentication token
+      tags:
+      - tokens
+  /v1/users:
+    get:
+      description: This endpoint gets all users
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for name
+        in: query
+        name: name
+        type: string
+      - description: Query string param for email
+        in: query
+        name: email
+        type: string
+      - description: Query string param for role
+        in: query
+        name: role
+        type: string
+      - description: Query string param for pagination (min 1)
+        in: query
+        name: page
+        type: string
+      - description: Query string param for pagination (max 100)
+        in: query
+        name: page_size
+        type: string
+      - description: 'Sort by asc or desc order. Asc: id, name, email, created_on,
+          modified_on | Desc: -id, -name, -email, -created_on, -modified_on'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.User'
+            type: array
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Get all users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with the request payload
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.createUserPayload'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.User'
+        "400":
+          description: Bad Request
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Create a new user
+      tags:
+      - users
+  /v1/users/{user_id}:
+    delete:
+      description: This endpoint deletes a user
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: ID of user to delete
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Delete a user
+      tags:
+      - users
+    get:
+      description: This endpoint gets a user by ID
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: ID of user to get
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.User'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Get user by ID
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      description: This endpoint updates a user
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.updateUserPayload'
+      - description: ID of user to update
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.User'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Update a user
+      tags:
+      - users
+  /v1/users/{user_id}/projects:
+    get:
+      description: This endpoint gets all projects for a user
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Query string param for pagination (min 1)
+        in: query
+        name: page
+        type: string
+      - description: Query string param for pagination (max 100)
+        in: query
+        name: page_size
+        type: string
+      - description: 'Sort by asc or desc order. Asc: id | Desc: -id'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.User'
+            type: array
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Get all projects for user
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Assign a user to a project with the request payload
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.assignUserToProjectPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Assign a user to a project
+      tags:
+      - users
+  /v1/users/activated:
+    put:
+      consumes:
+      - application/json
+      description: Activate a new user with the request payload
+      parameters:
+      - description: Bearer token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http.activateUserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_emzola_issuetracker_internal_model.User'
+        "400":
+          description: Bad Request
+        "409":
+          description: Conflict
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Activate a new user
+      tags:
+      - users
+swagger: "2.0"

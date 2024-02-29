@@ -15,7 +15,7 @@ type Token struct {
 	Plaintext string    `json:"token"`
 	Hash      []byte    `json:"-"`
 	UserID    int64     `json:"-"`
-	Expiry    time.Time `json:"expiry"`
+	Expiry    time.Time `json:"-"`
 	Scope     string    `json:"-"`
 }
 
