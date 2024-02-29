@@ -30,7 +30,7 @@ func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	// Load roles.
-	roles, err := rbac.LoadRoles("./roles.json")
+	roles, err := rbac.LoadRoles("roles.json")
 	if err != nil {
 		logger.Fatal("failed to load roles", zap.Error(err))
 	}
