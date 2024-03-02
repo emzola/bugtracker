@@ -12,6 +12,7 @@ The Issues Tracker API Backend is designed to help you manage and track issues i
   - [Authentication](#authentication)
   - [Roles and Permissions](#roles-and-permissions)
   - [Endpoints](#endpoints)
+  - [Swagger API Documentation](#swagger-doc)
 - [License](#license)
 
 ## <a id="features"></a>Features
@@ -54,12 +55,27 @@ export SMTP_PASSWORD=YourSMTPPassword
 - **Employee:** Restricted access (e.g., can only view and update their own issues).
 
 ### <a id="endpoints"></a>Endpoints
+- **Projects:**
+  - `GET /v1/projects` - Retrieve all projects.
+  - `GET /v1/projects/:id` - Retrieve a specific project.
+  - `GET /v1/projects/:id/users` - Retrieve all users for a project.
+  - `POST /v1/projects` - Create a new project.
+  - `PUT /v1/projects/:id` - Update a project.
+  - `DELETE /v1/projects/:id` - Delete a project.
+
 - **Issues:**
   - `GET /v1/issues` - Retrieve all issues.
   - `GET /v1/issues/:id` - Retrieve a specific issue.
   - `POST /v1/issues` - Create a new issue.
   - `PUT /v1/issues/:id` - Update an issue.
   - `DELETE /v1/issues/:id` - Delete an issue.
+
+- **Reports:**
+  - `GET /v1/issuesreport/status` - Retrieve report for issues statuses.
+  - `GET /v1/issuesreport/assignee` - Retrieve report for issues assignees.
+  - `GET /v1/issuesreport/reporter` - Retrieve report for issues reporters.
+  - `GET /v1/issuesreport/priority` - Retrieve report for issues priorities.
+  - `GET /v1/issuesreport/date` - Retrieve report for issues target dates.
   
 - **Users:**
   - `GET /v1/users` - Retrieve all users.
@@ -67,8 +83,17 @@ export SMTP_PASSWORD=YourSMTPPassword
   - `POST /v1/users` - Create a new user.
   - `PUT /v1/users/:id` - Update a user.
   - `DELETE /v1/users/:id` - Delete a user.
+  - `PUT /v1/users/activated` - Activate a new user.
+  - `GET /v1/users/:id/projects` - Retrieve all projects for a user.
+  - `POST /v1/users/:id/projects` - Assign user to project.
 
-For detailed API documentation and request/response examples, refer to [API Documentation](https://bibliotheca-api-dev-xfnt.4.us-1.fl0.io/api-docs)
+- **Tokens:**
+  - `POST /v1/tokens/activation` - Create user activation token.
+  - `POST /v1/tokens/authentication` - Create user authentication token.
+
+### <a id="swagger-doc"></a>Swagger API Documentation
+
+Swagger API documentation and request/response examples can be found on [http://localhost:8080/docs] when you run the API locally.
 
 ## <a id="license"></a>License
 This project is licensed under the MIT License.
