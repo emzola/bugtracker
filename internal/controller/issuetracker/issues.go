@@ -1,4 +1,4 @@
-package service
+package issuetracker
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/internal/repository"
+	"github.com/emzola/issuetracker/pkg/model"
 	"github.com/emzola/issuetracker/pkg/validator"
 )
 
@@ -19,7 +19,7 @@ type issueRepository interface {
 	DeleteIssue(ctx context.Context, id int64) error
 }
 
-func (s *Service) CreateIssue(ctx context.Context, title, description string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error) {
+func (c *Controller) CreateIssue(ctx context.Context, title, description string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error) {
 	if priority == "" {
 		priority = "low"
 	}
@@ -46,7 +46,7 @@ func (s *Service) CreateIssue(ctx context.Context, title, description string, re
 	var assignee *model.User
 	var err error
 	if assignedTo != nil {
-		assignee, err = s.repo.GetProjectUser(ctx, issue.ProjectID, *assignedTo)
+		assignee, err = c.repo.GetProjectUser(ctx, issue.ProjectID, *assignedTo)
 		if err != nil {
 			switch {
 			case errors.Is(err, repository.ErrNotFound):
@@ -65,7 +65,7 @@ func (s *Service) CreateIssue(ctx context.Context, title, description string, re
 	if issue.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err = s.repo.CreateIssue(ctx, issue)
+	err = c.repo.CreateIssue(ctx, issue)
 	if err != nil {
 		return nil, err
 	}
@@ -77,13 +77,13 @@ func (s *Service) CreateIssue(ctx context.Context, title, description string, re
 			"issueTitle":    issue.Title,
 			"issuePriority": issue.Priority,
 		}
-		s.SendEmail(data, assignee.Email, "issue_assign.tmpl")
+		c.SendEmail(data, assignee.Email, "issue_assign.tmpl")
 	}
 	return issue, nil
 }
 
-func (s *Service) GetIssue(ctx context.Context, id int64) (*model.Issue, error) {
-	issue, err := s.repo.GetIssue(ctx, id)
+func (c *Controller) GetIssue(ctx context.Context, id int64) (*model.Issue, error) {
+	issue, err := c.repo.GetIssue(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -95,7 +95,7 @@ func (s *Service) GetIssue(ctx context.Context, id int64) (*model.Issue, error) 
 	return issue, nil
 }
 
-func (s *Service) GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error) {
+func (c *Controller) GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
 	}
@@ -107,15 +107,15 @@ func (s *Service) GetAllIssues(ctx context.Context, title, reportedDate string, 
 			return nil, model.Metadata{}, err
 		}
 	}
-	issues, metadata, err := s.repo.GetAllIssues(ctx, title, reported, projectID, assignedTo, status, priority, filters)
+	issues, metadata, err := c.repo.GetAllIssues(ctx, title, reported, projectID, assignedTo, status, priority, filters)
 	if err != nil {
 		return nil, model.Metadata{}, err
 	}
 	return issues, metadata, nil
 }
 
-func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, status, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, user *model.User) (*model.Issue, error) {
-	issue, err := s.repo.GetIssue(ctx, id)
+func (c *Controller) UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, status, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, user *model.User) (*model.Issue, error) {
+	issue, err := c.repo.GetIssue(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -141,7 +141,7 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 	// If the assignee's role is not 'member', return an error.
 	var assignee *model.User
 	if assignedTo != nil {
-		assignee, err = s.repo.GetProjectUser(ctx, issue.ProjectID, *assignedTo)
+		assignee, err = c.repo.GetProjectUser(ctx, issue.ProjectID, *assignedTo)
 		if err != nil {
 			switch {
 			case errors.Is(err, repository.ErrNotFound):
@@ -188,7 +188,7 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 	if issue.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err = s.repo.UpdateIssue(ctx, issue)
+	err = c.repo.UpdateIssue(ctx, issue)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrEditConflict):
@@ -205,13 +205,13 @@ func (s *Service) UpdateIssue(ctx context.Context, id int64, title, description 
 			"issueTitle":    issue.Title,
 			"issuePriority": issue.Priority,
 		}
-		s.SendEmail(data, assignee.Email, "issue_assign.tmpl")
+		c.SendEmail(data, assignee.Email, "issue_assign.tmpl")
 	}
 	return issue, nil
 }
 
-func (s *Service) DeleteIssue(ctx context.Context, id int64) error {
-	err := s.repo.DeleteIssue(ctx, id)
+func (c *Controller) DeleteIssue(ctx context.Context, id int64) error {
+	err := c.repo.DeleteIssue(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):

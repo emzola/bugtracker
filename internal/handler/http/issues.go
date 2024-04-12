@@ -6,18 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
-	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/internal/controller/issuetracker"
+	"github.com/emzola/issuetracker/pkg/model"
 	"github.com/emzola/issuetracker/pkg/validator"
 )
-
-type issueService interface {
-	CreateIssue(ctx context.Context, title, description string, reporterID, projectID int64, assignedTo *int64, priority, targetResolutionDate, createdBy, modifiedBy string) (*model.Issue, error)
-	GetIssue(ctx context.Context, id int64) (*model.Issue, error)
-	GetAllIssues(ctx context.Context, title, reportedDate string, projectID, assignedTo int64, status, priority string, filters model.Filters, v *validator.Validator) ([]*model.Issue, model.Metadata, error)
-	UpdateIssue(ctx context.Context, id int64, title, description *string, assignedTo *int64, status, priority, targetResolutionDate, progress, actualResolutionDate, resolutionSummary *string, user *model.User) (*model.Issue, error)
-	DeleteIssue(ctx context.Context, id int64) error
-}
 
 // CreateIssue godoc
 // @Summary Create a new issue
@@ -34,7 +26,14 @@ type issueService interface {
 // @Failure 500
 // @Router /v1/issues [post]
 func (h *Handler) createIssue(w http.ResponseWriter, r *http.Request) {
-	var requestPayload createIssuePayload
+	var requestPayload struct {
+		Title                string `json:"title"`
+		Description          string `json:"description"`
+		ProjectID            int64  `json:"project_id"`
+		AssignedTo           *int64 `json:"assigned_to"`
+		Priority             string `json:"priority"`
+		TargetResolutionDate string `json:"target_resolution_date"`
+	}
 	err := h.decodeJSON(w, r, &requestPayload)
 	if err != nil {
 		h.badRequestResponse(w, r, err)
@@ -43,16 +42,16 @@ func (h *Handler) createIssue(w http.ResponseWriter, r *http.Request) {
 	userFromContext := h.contextGetUser(r)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	issue, err := h.service.CreateIssue(ctx, requestPayload.Title, requestPayload.Description, userFromContext.ID, requestPayload.ProjectID, requestPayload.AssignedTo, requestPayload.Priority, requestPayload.TargetResolutionDate, userFromContext.Name, userFromContext.Name)
+	issue, err := h.ctrl.CreateIssue(ctx, requestPayload.Title, requestPayload.Description, userFromContext.ID, requestPayload.ProjectID, requestPayload.AssignedTo, requestPayload.Priority, requestPayload.TargetResolutionDate, userFromContext.Name, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
-		case errors.Is(err, service.ErrInvalidRole):
+		case errors.Is(err, issuetracker.ErrInvalidRole):
 			h.invalidRoleResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -84,12 +83,12 @@ func (h *Handler) getIssue(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	issue, err := h.service.GetIssue(ctx, issueID)
+	issue, err := h.ctrl.GetIssue(ctx, issueID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -145,12 +144,12 @@ func (h *Handler) getAllIssues(w http.ResponseWriter, r *http.Request) {
 	queryParams.Filters.SortSafelist = []string{"id", "title", "reported_date", "project_id", "assigned_to", "status", "priority", "-id", "-title", "-reported_date", "-project_id", "-assigned_to", "-status", "-priority"}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	issues, metadata, err := h.service.GetAllIssues(ctx, queryParams.Title, queryParams.ReportedDate, queryParams.ProjectID, queryParams.AssignedTo, queryParams.Status, queryParams.Priority, queryParams.Filters, v)
+	issues, metadata, err := h.ctrl.GetAllIssues(ctx, queryParams.Title, queryParams.ReportedDate, queryParams.ProjectID, queryParams.AssignedTo, queryParams.Status, queryParams.Priority, queryParams.Filters, v)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -181,7 +180,17 @@ func (h *Handler) getAllIssues(w http.ResponseWriter, r *http.Request) {
 // @Failure 500
 // @Router /v1/issues/{issue_id} [patch]
 func (h *Handler) updateIssue(w http.ResponseWriter, r *http.Request) {
-	var requestPayload updateIsssuePayload
+	var requestPayload struct {
+		Title                *string `json:"title"`
+		Description          *string `json:"description"`
+		AssignedTo           *int64  `json:"assigned_to"`
+		Status               *string `json:"status"`
+		Priority             *string `json:"priority"`
+		TargetResolutionDate *string `json:"target_resolution_date"`
+		Progress             *string `json:"progress"`
+		ActualResolutionDate *string `json:"actual_resolution_date"`
+		ResolutionSummary    *string `json:"resolution_summary"`
+	}
 	issueID, err := h.readIDParam(r, "issue_id")
 	if err != nil {
 		h.notFoundResponse(w, r)
@@ -195,20 +204,20 @@ func (h *Handler) updateIssue(w http.ResponseWriter, r *http.Request) {
 	userFromContext := h.contextGetUser(r)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	issue, err := h.service.UpdateIssue(ctx, issueID, requestPayload.Title, requestPayload.Description, requestPayload.AssignedTo, requestPayload.Status, requestPayload.Priority, requestPayload.TargetResolutionDate, requestPayload.Progress, requestPayload.ActualResolutionDate, requestPayload.ResolutionSummary, userFromContext)
+	issue, err := h.ctrl.UpdateIssue(ctx, issueID, requestPayload.Title, requestPayload.Description, requestPayload.AssignedTo, requestPayload.Status, requestPayload.Priority, requestPayload.TargetResolutionDate, requestPayload.Progress, requestPayload.ActualResolutionDate, requestPayload.ResolutionSummary, userFromContext)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotPermitted):
+		case errors.Is(err, issuetracker.ErrNotPermitted):
 			h.notPermittedResponse(w, r)
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
-		case errors.Is(err, service.ErrInvalidRole):
+		case errors.Is(err, issuetracker.ErrInvalidRole):
 			h.invalidRoleResponse(w, r)
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
-		case errors.Is(err, service.ErrEditConflict):
+		case errors.Is(err, issuetracker.ErrEditConflict):
 			h.editConflictResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -240,12 +249,12 @@ func (h *Handler) deleteIssue(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	err = h.service.DeleteIssue(ctx, issueID)
+	err = h.ctrl.DeleteIssue(ctx, issueID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)

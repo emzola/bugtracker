@@ -6,17 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/pkg/validator"
 )
-
-type issuesReportService interface {
-	GetIssuesStatusReport(ctx context.Context, projectID int64) ([]*model.IssuesStatus, error)
-	GetIssuesAssigneeReport(ctx context.Context, projectID int64) ([]*model.IssuesAssignee, error)
-	GetIssuesReporterReport(ctx context.Context, projectID int64) ([]*model.IssuesReporter, error)
-	GetIssuesPriorityLevelReport(ctx context.Context, projectID int64) ([]*model.IssuesPriority, error)
-	GetIssuesTargetDateReport(ctx context.Context, projectID int64) ([]*model.IssuesTargetDate, error)
-}
 
 // GetIssuesStatusReport godoc
 // @Summary Get report of issue status for a project
@@ -37,7 +28,7 @@ func (h *Handler) getIssuesStatusReport(w http.ResponseWriter, r *http.Request) 
 	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	statuses, err := h.service.GetIssuesStatusReport(ctx, queryParams.ProjectID)
+	statuses, err := h.ctrl.GetIssuesStatusReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -72,7 +63,7 @@ func (h *Handler) getIssuesAssigneeReport(w http.ResponseWriter, r *http.Request
 	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	assignees, err := h.service.GetIssuesAssigneeReport(ctx, queryParams.ProjectID)
+	assignees, err := h.ctrl.GetIssuesAssigneeReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -107,7 +98,7 @@ func (h *Handler) getIssuesReporterReport(w http.ResponseWriter, r *http.Request
 	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	reporters, err := h.service.GetIssuesReporterReport(ctx, queryParams.ProjectID)
+	reporters, err := h.ctrl.GetIssuesReporterReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -142,7 +133,7 @@ func (h *Handler) getIssuesPriorityLevelReport(w http.ResponseWriter, r *http.Re
 	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	priorityLevels, err := h.service.GetIssuesPriorityLevelReport(ctx, queryParams.ProjectID)
+	priorityLevels, err := h.ctrl.GetIssuesPriorityLevelReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
@@ -177,7 +168,7 @@ func (h *Handler) getIssuesTargetDateReport(w http.ResponseWriter, r *http.Reque
 	queryParams.ProjectID = int64(h.readInt(qs, "project_id", 0, v))
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	targetDates, err := h.service.GetIssuesTargetDateReport(ctx, queryParams.ProjectID)
+	targetDates, err := h.ctrl.GetIssuesTargetDateReport(ctx, queryParams.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):

@@ -7,20 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
-	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/internal/controller/issuetracker"
+
+	"github.com/emzola/issuetracker/pkg/model"
 	"github.com/emzola/issuetracker/pkg/validator"
 )
-
-type projectService interface {
-	CreateProject(ctx context.Context, name, description string, assignedTo *int64, startDate, targetEndDate, createdBy, modifiedBy string) (*model.Project, error)
-	GetProject(ctx context.Context, id int64) (*model.Project, error)
-	GetAllProjects(ctx context.Context, name string, assignedTo int64, startDate, targetEndDate, actualEndDate, createdBy string, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error)
-	UpdateProject(ctx context.Context, id int64, name, description *string, assignedTo *int64, startDate, targetEndDate, actualEnddate *string, user *model.User) (*model.Project, error)
-	DeleteProject(ctx context.Context, id int64) error
-	GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error)
-	GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error)
-}
 
 // CreateProject godoc
 // @Summary Create a new project
@@ -37,7 +28,13 @@ type projectService interface {
 // @Failure 500
 // @Router /v1/projects [post]
 func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
-	var requestPayload createProjectPayload
+	var requestPayload struct {
+		Name          string `json:"name"`
+		Description   string `json:"description"`
+		AssignedTo    *int64 `json:"assigned_to"`
+		StartDate     string `json:"start_date"`
+		TargetEndDate string `json:"target_end_date"`
+	}
 	err := h.decodeJSON(w, r, &requestPayload)
 	if err != nil {
 		h.badRequestResponse(w, r, err)
@@ -46,16 +43,16 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	userFromContext := h.contextGetUser(r)
-	project, err := h.service.CreateProject(ctx, requestPayload.Name, requestPayload.Description, requestPayload.AssignedTo, requestPayload.StartDate, requestPayload.TargetEndDate, userFromContext.Name, userFromContext.Name)
+	project, err := h.ctrl.CreateProject(ctx, requestPayload.Name, requestPayload.Description, requestPayload.AssignedTo, requestPayload.StartDate, requestPayload.TargetEndDate, userFromContext.Name, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
-		case errors.Is(err, service.ErrInvalidRole):
+		case errors.Is(err, issuetracker.ErrInvalidRole):
 			h.invalidRoleResponse(w, r)
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -89,12 +86,12 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	project, err := h.service.GetProject(ctx, projectID)
+	project, err := h.ctrl.GetProject(ctx, projectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -150,12 +147,12 @@ func (h *Handler) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	queryParams.Filters.SortSafelist = []string{"id", "name", "assigned_to", "start_date", "target_end_date", "actual_end_date", "created_by", "-id", "-name", "-assigned_to", "-start_date", "-target_end_date", "-actual_end_date", "-created_by"}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	projects, metadata, err := h.service.GetAllProjects(ctx, queryParams.Name, queryParams.AssignedTo, queryParams.StartDate, queryParams.TargetEndDate, queryParams.ActualEndDate, queryParams.CreatedBy, queryParams.Filters, v)
+	projects, metadata, err := h.ctrl.GetAllProjects(ctx, queryParams.Name, queryParams.AssignedTo, queryParams.StartDate, queryParams.TargetEndDate, queryParams.ActualEndDate, queryParams.CreatedBy, queryParams.Filters, v)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -186,7 +183,14 @@ func (h *Handler) getAllProjects(w http.ResponseWriter, r *http.Request) {
 // @Failure 500
 // @Router /v1/projects/{project_id} [patch]
 func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
-	var requestPayload updateProjectPayload
+	var requestPayload struct {
+		Name          *string `json:"name"`
+		Description   *string `json:"description"`
+		AssignedTo    *int64  `json:"assigned_to"`
+		StartDate     *string `json:"start_date"`
+		TargetEndDate *string `json:"target_end_date"`
+		ActualEndDate *string `json:"actual_end_date"`
+	}
 	projectID, err := h.readIDParam(r, "project_id")
 	if err != nil {
 		h.notFoundResponse(w, r)
@@ -200,18 +204,18 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	userFromContext := h.contextGetUser(r)
-	project, err := h.service.UpdateProject(ctx, projectID, requestPayload.Name, requestPayload.Description, requestPayload.AssignedTo, requestPayload.StartDate, requestPayload.TargetEndDate, requestPayload.ActualEndDate, userFromContext)
+	project, err := h.ctrl.UpdateProject(ctx, projectID, requestPayload.Name, requestPayload.Description, requestPayload.AssignedTo, requestPayload.StartDate, requestPayload.TargetEndDate, requestPayload.ActualEndDate, userFromContext)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotPermitted):
+		case errors.Is(err, issuetracker.ErrNotPermitted):
 			h.notPermittedResponse(w, r)
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
-		case errors.Is(err, service.ErrEditConflict):
+		case errors.Is(err, issuetracker.ErrEditConflict):
 			h.editConflictResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -243,12 +247,12 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	err = h.service.DeleteProject(ctx, projectID)
+	err = h.ctrl.DeleteProject(ctx, projectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -295,12 +299,12 @@ func (h *Handler) getProjectUsers(w http.ResponseWriter, r *http.Request) {
 	queryParams.Filters.SortSafelist = []string{"id", "-id"}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	users, metadata, err := h.service.GetProjectUsers(ctx, projectID, queryParams.Role, queryParams.Filters, v)
+	users, metadata, err := h.ctrl.GetProjectUsers(ctx, projectID, queryParams.Role, queryParams.Filters, v)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/pkg/model"
 )
 
 func (r *Repository) CreateToken(ctx context.Context, userID int64, ttl time.Duration, scope string) (*model.Token, error) {

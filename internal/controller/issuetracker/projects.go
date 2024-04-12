@@ -1,4 +1,4 @@
-package service
+package issuetracker
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/internal/repository"
+	"github.com/emzola/issuetracker/pkg/model"
 	"github.com/emzola/issuetracker/pkg/validator"
 )
 
@@ -21,7 +21,7 @@ type projectRepository interface {
 	GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error)
 }
 
-func (s *Service) CreateProject(ctx context.Context, name, description string, assignedTo *int64, startDate, targetEndDate, createdBy, modifiedBy string) (*model.Project, error) {
+func (c *Controller) CreateProject(ctx context.Context, name, description string, assignedTo *int64, startDate, targetEndDate, createdBy, modifiedBy string) (*model.Project, error) {
 	project := &model.Project{
 		Name:        name,
 		Description: description,
@@ -48,7 +48,7 @@ func (s *Service) CreateProject(ctx context.Context, name, description string, a
 	var assignee *model.User
 	var err error
 	if assignedTo != nil {
-		assignee, err = s.repo.GetUserByID(ctx, *assignedTo)
+		assignee, err = c.repo.GetUserByID(ctx, *assignedTo)
 		if err != nil {
 			switch {
 			case errors.Is(err, repository.ErrNotFound):
@@ -67,7 +67,7 @@ func (s *Service) CreateProject(ctx context.Context, name, description string, a
 	if project.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err = s.repo.CreateProject(ctx, project)
+	err = c.repo.CreateProject(ctx, project)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateKey):
@@ -84,13 +84,13 @@ func (s *Service) CreateProject(ctx context.Context, name, description string, a
 			"projectID":   strconv.Itoa(int(project.ID)),
 			"projectName": project.Name,
 		}
-		s.SendEmail(data, assignee.Email, "project_assign.tmpl")
+		c.SendEmail(data, assignee.Email, "project_assign.tmpl")
 	}
 	return project, nil
 }
 
-func (s *Service) GetProject(ctx context.Context, id int64) (*model.Project, error) {
-	project, err := s.repo.GetProject(ctx, id)
+func (c *Controller) GetProject(ctx context.Context, id int64) (*model.Project, error) {
+	project, err := c.repo.GetProject(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -102,7 +102,7 @@ func (s *Service) GetProject(ctx context.Context, id int64) (*model.Project, err
 	return project, nil
 }
 
-func (s *Service) GetAllProjects(ctx context.Context, name string, assignedTo int64, startDate, targetEndDate, actualEndDate, createdBy string, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
+func (c *Controller) GetAllProjects(ctx context.Context, name string, assignedTo int64, startDate, targetEndDate, actualEndDate, createdBy string, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
 	}
@@ -126,15 +126,15 @@ func (s *Service) GetAllProjects(ctx context.Context, name string, assignedTo in
 			return nil, model.Metadata{}, err
 		}
 	}
-	projects, metadata, err := s.repo.GetAllProjects(ctx, name, assignedTo, start, targetEnd, actualEnd, createdBy, filters)
+	projects, metadata, err := c.repo.GetAllProjects(ctx, name, assignedTo, start, targetEnd, actualEnd, createdBy, filters)
 	if err != nil {
 		return nil, model.Metadata{}, err
 	}
 	return projects, metadata, nil
 }
 
-func (s *Service) UpdateProject(ctx context.Context, id int64, name, description *string, assignedTo *int64, startDate, targetEndDate, actualEndDate *string, user *model.User) (*model.Project, error) {
-	project, err := s.repo.GetProject(ctx, id)
+func (c *Controller) UpdateProject(ctx context.Context, id int64, name, description *string, assignedTo *int64, startDate, targetEndDate, actualEndDate *string, user *model.User) (*model.Project, error) {
+	project, err := c.repo.GetProject(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -181,7 +181,7 @@ func (s *Service) UpdateProject(ctx context.Context, id int64, name, description
 	// attempt to fetch the assignee. If the assignee's role is not 'lead', return an error.
 	var assignee *model.User
 	if assignedTo != nil && user.Role == "manager" {
-		assignee, err = s.repo.GetUserByID(ctx, *assignedTo)
+		assignee, err = c.repo.GetUserByID(ctx, *assignedTo)
 		if err != nil {
 			switch {
 			case errors.Is(err, repository.ErrNotFound):
@@ -200,7 +200,7 @@ func (s *Service) UpdateProject(ctx context.Context, id int64, name, description
 	if project.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err = s.repo.UpdateProject(ctx, project)
+	err = c.repo.UpdateProject(ctx, project)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrEditConflict):
@@ -216,13 +216,13 @@ func (s *Service) UpdateProject(ctx context.Context, id int64, name, description
 			"projectID":   strconv.Itoa(int(project.ID)),
 			"projectName": project.Name,
 		}
-		s.SendEmail(data, assignee.Email, "project_assign.tmpl")
+		c.SendEmail(data, assignee.Email, "project_assign.tmpl")
 	}
 	return project, nil
 }
 
-func (s *Service) DeleteProject(ctx context.Context, id int64) error {
-	err := s.repo.DeleteProject(ctx, id)
+func (c *Controller) DeleteProject(ctx context.Context, id int64) error {
+	err := c.repo.DeleteProject(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -234,19 +234,19 @@ func (s *Service) DeleteProject(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *Service) GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
+func (c *Controller) GetProjectUsers(ctx context.Context, projectID int64, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
 	}
-	users, metadata, err := s.repo.GetProjectUsers(ctx, projectID, role, filters)
+	users, metadata, err := c.repo.GetProjectUsers(ctx, projectID, role, filters)
 	if err != nil {
 		return nil, model.Metadata{}, err
 	}
 	return users, metadata, nil
 }
 
-func (s *Service) GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error) {
-	user, err := s.repo.GetProjectUser(ctx, projectID, userID)
+func (c *Controller) GetProjectUser(ctx context.Context, projectID, userID int64) (*model.User, error) {
+	user, err := c.repo.GetProjectUser(ctx, projectID, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):

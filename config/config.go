@@ -1,8 +1,8 @@
 package config
 
-// AppConfiguration defines configuration values. Values are read via
+// config defines configuration values. Values are read via
 // command-line flags and environment variables.
-type AppConfiguration struct {
+type App struct {
 	Port     int
 	Env      string
 	Database struct {

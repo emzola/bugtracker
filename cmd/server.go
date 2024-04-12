@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func serve(handler http.Handler, cfg config.AppConfiguration, wg *sync.WaitGroup, logger *zap.Logger) error {
+func serve(handler http.Handler, cfg config.App, wg *sync.WaitGroup, logger *zap.Logger) error {
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
 		Handler:      handler,

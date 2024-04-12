@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/internal/repository"
+	"github.com/emzola/issuetracker/pkg/model"
 )
 
 func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {

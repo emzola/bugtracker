@@ -8,9 +8,9 @@ import (
 
 	"github.com/emzola/issuetracker/config"
 	_ "github.com/emzola/issuetracker/docs"
+	"github.com/emzola/issuetracker/internal/controller/issuetracker"
 	httpHandler "github.com/emzola/issuetracker/internal/handler/http"
 	"github.com/emzola/issuetracker/internal/repository/postgres"
-	"github.com/emzola/issuetracker/internal/service"
 	"github.com/emzola/issuetracker/pkg/rbac"
 
 	"go.uber.org/zap"
@@ -34,7 +34,7 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to load roles", zap.Error(err))
 	}
-	var cfg config.AppConfiguration
+	var cfg config.App
 	// Read server settings from command-line flags into the config struct.
 	flag.IntVar(&cfg.Port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment(development|staging|production)")
@@ -62,7 +62,7 @@ func main() {
 	})
 	flag.Parse()
 	// Establish database connection pool.
-	db, err := dbConn(cfg)
+	db, err := config.DbConn(cfg)
 	if err != nil {
 		logger.Fatal("failed to establish database connection pool", zap.Error(err))
 	}
@@ -70,8 +70,8 @@ func main() {
 	var wg sync.WaitGroup
 	// Instantiate app layers.
 	repo := postgres.New(db)
-	service := service.New(repo, cfg, &wg, logger)
-	handler := httpHandler.New(service, cfg, roles)
+	ctrl := issuetracker.New(repo, cfg, &wg, logger)
+	handler := httpHandler.New(ctrl, cfg, roles)
 	// Start server.
 	err = serve(handler.Routes(), cfg, &wg, logger)
 	if err != nil {

@@ -6,14 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
-	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/internal/controller/issuetracker"
 )
-
-type tokenService interface {
-	CreateActivationToken(ctx context.Context, user *model.User) error
-	CreateAuthenticationToken(ctx context.Context, email, password string) ([]byte, error)
-}
 
 // CreateActivationToken godoc
 // @Summary Create a new activation token
@@ -28,7 +22,9 @@ type tokenService interface {
 // @Failure 500
 // @Router /v1/tokens/activation [post]
 func (h *Handler) createActivationToken(w http.ResponseWriter, r *http.Request) {
-	var requestPayload createActivationTokenPayload
+	var requestPayload struct {
+		Email string `json:"email"`
+	}
 	err := h.decodeJSON(w, r, &requestPayload)
 	if err != nil {
 		h.badRequestResponse(w, r, err)
@@ -36,24 +32,24 @@ func (h *Handler) createActivationToken(w http.ResponseWriter, r *http.Request) 
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	user, err := h.service.GetUserByEmail(ctx, requestPayload.Email)
+	user, err := h.ctrl.GetUserByEmail(ctx, requestPayload.Email)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
 		}
 		return
 	}
-	err = h.service.CreateActivationToken(ctx, user)
+	err = h.ctrl.CreateActivationToken(ctx, user)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrActivated):
+		case errors.Is(err, issuetracker.ErrActivated):
 			h.alreadyActivatedResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -80,7 +76,10 @@ func (h *Handler) createActivationToken(w http.ResponseWriter, r *http.Request) 
 // @Failure 500
 // @Router /v1/tokens/authentication [post]
 func (h *Handler) createAuthenticationToken(w http.ResponseWriter, r *http.Request) {
-	var requestPayload createAuthenticationTokenPayload
+	var requestPayload struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 	err := h.decodeJSON(w, r, &requestPayload)
 	if err != nil {
 		h.badRequestResponse(w, r, err)
@@ -88,14 +87,14 @@ func (h *Handler) createAuthenticationToken(w http.ResponseWriter, r *http.Reque
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	jwtBytes, err := h.service.CreateAuthenticationToken(ctx, requestPayload.Email, requestPayload.Password)
+	jwtBytes, err := h.ctrl.CreateAuthenticationToken(ctx, requestPayload.Email, requestPayload.Password)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
-		case errors.Is(err, service.ErrInvalidCredentials):
+		case errors.Is(err, issuetracker.ErrInvalidCredentials):
 			h.invalidCredentialsResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)

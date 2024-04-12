@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/pkg/model"
 )
 
 // Resources holds data for URL resources.

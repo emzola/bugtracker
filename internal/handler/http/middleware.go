@@ -11,8 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
-	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/internal/controller/issuetracker"
+
+	"github.com/emzola/issuetracker/pkg/model"
 	"github.com/emzola/issuetracker/pkg/rbac"
 	"github.com/pascaldekloe/jwt"
 	"golang.org/x/time/rate"
@@ -64,12 +65,12 @@ func (h *Handler) authenticate(next http.Handler) http.Handler {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 		// Lookup the user record from the database.
-		user, err := h.service.GetUserByID(ctx, userID)
+		user, err := h.ctrl.GetUserByID(ctx, userID)
 		if err != nil {
 			switch {
 			case errors.Is(err, context.Canceled):
 				return
-			case errors.Is(err, service.ErrNotFound):
+			case errors.Is(err, issuetracker.ErrNotFound):
 				h.invalidAuthenticationTokenResponse(w, r)
 			default:
 				h.serverErrorResponse(w, r, err)

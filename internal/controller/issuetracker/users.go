@@ -1,12 +1,12 @@
-package service
+package issuetracker
 
 import (
 	"context"
 	"errors"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/internal/repository"
+	"github.com/emzola/issuetracker/pkg/model"
 
 	"github.com/emzola/issuetracker/pkg/validator"
 )
@@ -24,7 +24,7 @@ type userRepository interface {
 	GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters) ([]*model.Project, model.Metadata, error)
 }
 
-func (s *Service) CreateUser(ctx context.Context, name, email, password, role, createdBy, modifiedBy string) (*model.User, error) {
+func (c *Controller) CreateUser(ctx context.Context, name, email, password, role, createdBy, modifiedBy string) (*model.User, error) {
 	user := &model.User{
 		Name:       name,
 		Email:      email,
@@ -41,7 +41,7 @@ func (s *Service) CreateUser(ctx context.Context, name, email, password, role, c
 	if user.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err = s.repo.CreateUser(ctx, user)
+	err = c.repo.CreateUser(ctx, user)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateKey):
@@ -52,7 +52,7 @@ func (s *Service) CreateUser(ctx context.Context, name, email, password, role, c
 		}
 	}
 	// Generate an activation token.
-	token, err := s.repo.CreateToken(ctx, user.ID, 3*24*time.Hour, model.ScopeActivation)
+	token, err := c.repo.CreateToken(ctx, user.ID, 3*24*time.Hour, model.ScopeActivation)
 	if err != nil {
 		return nil, err
 	}
@@ -61,16 +61,16 @@ func (s *Service) CreateUser(ctx context.Context, name, email, password, role, c
 		"activationToken": token.Plaintext,
 		"name":            user.Name,
 	}
-	s.SendEmail(data, user.Email, "user_welcome.tmpl")
+	c.SendEmail(data, user.Email, "user_welcome.tmpl")
 	return user, nil
 }
 
-func (s *Service) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+func (c *Controller) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	v := validator.New()
 	if model.ValidateEmail(v, email); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	user, err := s.repo.GetUserByEmail(ctx, email)
+	user, err := c.repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -83,8 +83,8 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (*model.User
 	return user, nil
 }
 
-func (s *Service) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
-	user, err := s.repo.GetUserByID(ctx, id)
+func (c *Controller) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
+	user, err := c.repo.GetUserByID(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -96,23 +96,23 @@ func (s *Service) GetUserByID(ctx context.Context, id int64) (*model.User, error
 	return user, nil
 }
 
-func (s *Service) GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
+func (c *Controller) GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
 	}
-	users, metadata, err := s.repo.GetAllUsers(ctx, name, email, role, filters)
+	users, metadata, err := c.repo.GetAllUsers(ctx, name, email, role, filters)
 	if err != nil {
 		return nil, model.Metadata{}, err
 	}
 	return users, metadata, nil
 }
 
-func (s *Service) GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error) {
+func (c *Controller) GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error) {
 	v := validator.New()
 	if model.ValidateTokenPlaintext(v, tokenPlaintext); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	user, err := s.repo.GetUserForToken(ctx, model.ScopeActivation, tokenPlaintext)
+	user, err := c.repo.GetUserForToken(ctx, model.ScopeActivation, tokenPlaintext)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -125,11 +125,11 @@ func (s *Service) GetUserForToken(ctx context.Context, tokenScope, tokenPlaintex
 	return user, nil
 }
 
-func (s *Service) ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error {
+func (c *Controller) ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error {
 	// Update user.
 	user.Activated = true
 	user.ModifiedBy = modifiedBy
-	err := s.repo.UpdateUser(ctx, user)
+	err := c.repo.UpdateUser(ctx, user)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrEditConflict):
@@ -139,15 +139,15 @@ func (s *Service) ActivateUser(ctx context.Context, user *model.User, modifiedBy
 		}
 	}
 	// Delete all activation tokens for user.
-	err = s.repo.DeleteAllTokensForUser(ctx, model.ScopeActivation, user.ID)
+	err = c.repo.DeleteAllTokensForUser(ctx, model.ScopeActivation, user.ID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Service) UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedBy string) (*model.User, error) {
-	user, err := s.repo.GetUserByID(ctx, id)
+func (c *Controller) UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedBy string) (*model.User, error) {
+	user, err := c.repo.GetUserByID(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -170,7 +170,7 @@ func (s *Service) UpdateUser(ctx context.Context, id int64, name, email, role *s
 	if user.Validate(v); !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	err = s.repo.UpdateUser(ctx, user)
+	err = c.repo.UpdateUser(ctx, user)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateKey):
@@ -185,8 +185,8 @@ func (s *Service) UpdateUser(ctx context.Context, id int64, name, email, role *s
 	return user, nil
 }
 
-func (s *Service) DeleteUser(ctx context.Context, id int64) error {
-	err := s.repo.DeleteUser(ctx, id)
+func (c *Controller) DeleteUser(ctx context.Context, id int64) error {
+	err := c.repo.DeleteUser(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -199,9 +199,9 @@ func (s *Service) DeleteUser(ctx context.Context, id int64) error {
 }
 
 // AssignUserToProject assigns a user to a project.
-func (s *Service) AssignUserToProject(ctx context.Context, userID, projectID int64) error {
+func (c *Controller) AssignUserToProject(ctx context.Context, userID, projectID int64) error {
 	v := validator.New()
-	user, err := s.repo.GetUserByID(ctx, userID)
+	user, err := c.repo.GetUserByID(ctx, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -210,7 +210,7 @@ func (s *Service) AssignUserToProject(ctx context.Context, userID, projectID int
 			return err
 		}
 	}
-	project, err := s.repo.GetProject(ctx, projectID)
+	project, err := c.repo.GetProject(ctx, projectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -222,7 +222,7 @@ func (s *Service) AssignUserToProject(ctx context.Context, userID, projectID int
 	if user.Role != "member" {
 		return ErrInvalidRole
 	}
-	err = s.repo.AssignUserToProject(ctx, user.ID, project.ID)
+	err = c.repo.AssignUserToProject(ctx, user.ID, project.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateKey):
@@ -245,11 +245,11 @@ func (s *Service) AssignUserToProject(ctx context.Context, userID, projectID int
 	return nil
 }
 
-func (s *Service) GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
+func (c *Controller) GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error) {
 	if filters.Validate(v); !v.Valid() {
 		return nil, model.Metadata{}, failedValidationErr(v.Errors)
 	}
-	projects, metadata, err := s.repo.GetAllProjectsForUser(ctx, userID, filters)
+	projects, metadata, err := c.repo.GetAllProjectsForUser(ctx, userID, filters)
 	if err != nil {
 		return nil, model.Metadata{}, err
 	}

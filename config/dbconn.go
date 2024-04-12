@@ -1,25 +1,24 @@
-package main
+package config
 
 import (
 	"context"
 	"database/sql"
 	"time"
 
-	"github.com/emzola/issuetracker/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func dbConn(cfg config.AppConfiguration) (*sql.DB, error) {
-	db, err := sql.Open("pgx", cfg.Database.Dsn)
+func DbConn(app App) (*sql.DB, error) {
+	db, err := sql.Open("pgx", app.Database.Dsn)
 	if err != nil {
 		return nil, err
 	}
-	duration, err := time.ParseDuration(cfg.Database.MaxIdleTime)
+	duration, err := time.ParseDuration(app.Database.MaxIdleTime)
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
-	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	db.SetMaxOpenConns(app.Database.MaxOpenConns)
+	db.SetMaxIdleConns(app.Database.MaxIdleConns)
 	db.SetConnMaxIdleTime(duration)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

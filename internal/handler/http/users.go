@@ -6,23 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
-	"github.com/emzola/issuetracker/internal/service"
+	"github.com/emzola/issuetracker/internal/controller/issuetracker"
+	"github.com/emzola/issuetracker/pkg/model"
 	"github.com/emzola/issuetracker/pkg/validator"
 )
-
-type userService interface {
-	CreateUser(ctx context.Context, name, email, password, role, createdBy, modifiedBy string) (*model.User, error)
-	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
-	GetUserByID(ctx context.Context, id int64) (*model.User, error)
-	GetAllUsers(ctx context.Context, name, email, role string, filters model.Filters, v *validator.Validator) ([]*model.User, model.Metadata, error)
-	GetUserForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*model.User, error)
-	ActivateUser(ctx context.Context, user *model.User, modifiedBy string) error
-	UpdateUser(ctx context.Context, id int64, name, email, role *string, modifiedby string) (*model.User, error)
-	DeleteUser(ctx context.Context, id int64) error
-	AssignUserToProject(ctx context.Context, userID, projectID int64) error
-	GetAllProjectsForUser(ctx context.Context, userID int64, filters model.Filters, v *validator.Validator) ([]*model.Project, model.Metadata, error)
-}
 
 // CreateUser godoc
 // @Summary Create a new user
@@ -38,7 +25,12 @@ type userService interface {
 // @Failure 500
 // @Router /v1/users [post]
 func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
-	var requestPayload createUserPayload
+	var requestPayload struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Role     string `json:"role"`
+	}
 	err := h.decodeJSON(w, r, &requestPayload)
 	if err != nil {
 		h.badRequestResponse(w, r, err)
@@ -47,12 +39,12 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	userFromContext := h.contextGetUser(r)
-	user, err := h.service.CreateUser(ctx, requestPayload.Name, requestPayload.Email, requestPayload.Password, requestPayload.Role, userFromContext.Name, userFromContext.Name)
+	user, err := h.ctrl.CreateUser(ctx, requestPayload.Name, requestPayload.Email, requestPayload.Password, requestPayload.Role, userFromContext.Name, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -80,19 +72,21 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 // @Failure 500
 // @Router /v1/users/activated [put]
 func (h *Handler) activateUser(w http.ResponseWriter, r *http.Request) {
-	var requestPayload activateUserPayload
+	var requestPayload struct {
+		Token string `json:"token"`
+	}
 	err := h.decodeJSON(w, r, &requestPayload)
 	if err != nil {
 		h.badRequestResponse(w, r, err)
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	user, err := h.service.GetUserForToken(ctx, model.ScopeActivation, requestPayload.Token)
+	user, err := h.ctrl.GetUserForToken(ctx, model.ScopeActivation, requestPayload.Token)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -100,12 +94,12 @@ func (h *Handler) activateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userFromContext := h.contextGetUser(r)
-	err = h.service.ActivateUser(ctx, user, userFromContext.Name)
+	err = h.ctrl.ActivateUser(ctx, user, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrEditConflict):
+		case errors.Is(err, issuetracker.ErrEditConflict):
 			h.editConflictResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -137,12 +131,12 @@ func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	user, err := h.service.GetUserByID(ctx, userID)
+	user, err := h.ctrl.GetUserByID(ctx, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -189,12 +183,12 @@ func (h *Handler) getAllUsers(w http.ResponseWriter, r *http.Request) {
 	requestQuery.Filters.SortSafelist = []string{"id", "name", "email", "created_on", "modified_on", "-id", "-name", "-email", "-created_on", "-modified_on"}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	users, metadata, err := h.service.GetAllUsers(ctx, requestQuery.Name, requestQuery.Email, requestQuery.Role, requestQuery.Filters, v)
+	users, metadata, err := h.ctrl.GetAllUsers(ctx, requestQuery.Name, requestQuery.Email, requestQuery.Role, requestQuery.Filters, v)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -224,7 +218,11 @@ func (h *Handler) getAllUsers(w http.ResponseWriter, r *http.Request) {
 // @Failure 500
 // @Router /v1/users/{user_id} [patch]
 func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
-	var requestPayload updateUserPayload
+	var requestPayload struct {
+		Name  *string `json:"name"`
+		Email *string `json:"email"`
+		Role  *string `json:"role"`
+	}
 	userID, err := h.readIDParam(r, "user_id")
 	if err != nil {
 		h.notFoundResponse(w, r)
@@ -238,16 +236,16 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 	userFromContext := h.contextGetUser(r)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	user, err := h.service.UpdateUser(ctx, userID, requestPayload.Name, requestPayload.Email, requestPayload.Role, userFromContext.Name)
+	user, err := h.ctrl.UpdateUser(ctx, userID, requestPayload.Name, requestPayload.Email, requestPayload.Role, userFromContext.Name)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
-		case errors.Is(err, service.ErrEditConflict):
+		case errors.Is(err, issuetracker.ErrEditConflict):
 			h.editConflictResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -279,10 +277,10 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	err = h.service.DeleteUser(ctx, userID)
+	err = h.ctrl.DeleteUser(ctx, userID)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -311,7 +309,9 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 // @Failure 500
 // @Router /v1/users/{user_id}/projects [post]
 func (h *Handler) assignUserToProject(w http.ResponseWriter, r *http.Request) {
-	var requestPayload assignUserToProjectPayload
+	var requestPayload struct {
+		ProjectID int64 `json:"project_id"`
+	}
 	userID, err := h.readIDParam(r, "user_id")
 	if err != nil {
 		h.notFoundResponse(w, r)
@@ -324,16 +324,16 @@ func (h *Handler) assignUserToProject(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	err = h.service.AssignUserToProject(ctx, userID, requestPayload.ProjectID)
+	err = h.ctrl.AssignUserToProject(ctx, userID, requestPayload.ProjectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, issuetracker.ErrNotFound):
 			h.notFoundResponse(w, r)
-		case errors.Is(err, service.ErrInvalidRole):
+		case errors.Is(err, issuetracker.ErrInvalidRole):
 			h.invalidRoleResponse(w, r)
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)
@@ -376,12 +376,12 @@ func (h *Handler) getAllProjectsForUser(w http.ResponseWriter, r *http.Request) 
 	queryParams.Filters.SortSafelist = []string{"id", "-id"}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
-	projects, metadata, err := h.service.GetAllProjectsForUser(ctx, userID, queryParams.Filters, v)
+	projects, metadata, err := h.ctrl.GetAllProjectsForUser(ctx, userID, queryParams.Filters, v)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			return
-		case errors.Is(err, service.ErrFailedValidation):
+		case errors.Is(err, issuetracker.ErrFailedValidation):
 			h.failedValidationResponse(w, r, err)
 		default:
 			h.serverErrorResponse(w, r, err)

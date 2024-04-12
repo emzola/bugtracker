@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/pkg/model"
 )
 
 type contextKey string

@@ -1,4 +1,4 @@
-package service
+package issuetracker
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emzola/issuetracker/internal/model"
 	"github.com/emzola/issuetracker/internal/repository"
+	"github.com/emzola/issuetracker/pkg/model"
 	"github.com/emzola/issuetracker/pkg/validator"
 	"github.com/pascaldekloe/jwt"
 )
@@ -17,11 +17,11 @@ type tokenRepository interface {
 	DeleteAllTokensForUser(ctx context.Context, scope string, userID int64) error
 }
 
-func (s *Service) CreateActivationToken(ctx context.Context, user *model.User) error {
+func (c *Controller) CreateActivationToken(ctx context.Context, user *model.User) error {
 	if user.Activated {
 		return ErrActivated
 	}
-	token, err := s.repo.CreateToken(ctx, user.ID, 3*24*time.Hour, model.ScopeActivation)
+	token, err := c.repo.CreateToken(ctx, user.ID, 3*24*time.Hour, model.ScopeActivation)
 	if err != nil {
 		return err
 	}
@@ -30,18 +30,18 @@ func (s *Service) CreateActivationToken(ctx context.Context, user *model.User) e
 		"activationToken": token.Plaintext,
 		"name":            user.Name,
 	}
-	s.SendEmail(data, user.Email, "token_activation.tmpl")
+	c.SendEmail(data, user.Email, "token_activation.tmpl")
 	return nil
 }
 
-func (s *Service) CreateAuthenticationToken(ctx context.Context, email, password string) ([]byte, error) {
+func (c *Controller) CreateAuthenticationToken(ctx context.Context, email, password string) ([]byte, error) {
 	v := validator.New()
 	model.ValidateEmail(v, email)
 	model.ValidatePasswordPlaintext(v, password)
 	if !v.Valid() {
 		return nil, failedValidationErr(v.Errors)
 	}
-	user, err := s.repo.GetUserByEmail(ctx, email)
+	user, err := c.repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
@@ -64,7 +64,7 @@ func (s *Service) CreateAuthenticationToken(ctx context.Context, email, password
 	claims.Expires = jwt.NewNumericTime(time.Now().Add(24 * time.Hour))
 	claims.Issuer = "github.com/emzola/issuetracker"
 	claims.Audiences = []string{"github.com/emzola/issuetracker"}
-	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(s.Config.Jwt.Secret))
+	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(c.Config.Jwt.Secret))
 	if err != nil {
 		return nil, err
 	}

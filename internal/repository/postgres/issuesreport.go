@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/emzola/issuetracker/internal/model"
+	"github.com/emzola/issuetracker/pkg/model"
 )
 
 func (r *Repository) GetIssuesStatusReport(ctx context.Context, projectID int64) ([]*model.IssuesStatus, error) {
